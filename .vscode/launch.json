@@ -1,0 +1,25 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "kael",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/SCREENS/main.dart"
+        },
+        {
+            "name": "kael (profile mode)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile",
+            "program": "lib/SCREENS/main.dart"
+        },
+        {
+            "name": "kael (release mode)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release",
+            "program": "lib/SCREENS/main.dart"
+        }
+    ]
+}
