@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:kael/API/gemini_service.dart';
@@ -5,6 +6,7 @@ import 'package:kael/SCREENS/HOME/DATA%20MODEL/project_model.dart';
 
 class ProjectProvider extends ChangeNotifier {
   final GeminiService _geminiService = GeminiService();
+  
   // --- DATA ---
   final List<ProjectPage> _projects = [
     ProjectPage(
@@ -48,19 +50,19 @@ class ProjectProvider extends ChangeNotifier {
     }
   }
 
-void addNewProject(String baseName) {
-  int count = projects.where((p) => p.title.startsWith("NEW PROJECT")).length;
-  String uniqueTitle = count == 0 ? "NEW PROJECT" : "NEW PROJECT ${count + 1}";
-  
-  final newProject = ProjectPage(
-    id: DateTime.now().millisecondsSinceEpoch.toString(), // Unique ID
-    title: uniqueTitle,
-    cells: [],
-  );
-  
-  projects.add(newProject);
-  notifyListeners();
-}
+  void addNewProject(String baseName) {
+    int count = projects.where((p) => p.title.startsWith("NEW PROJECT")).length;
+    String uniqueTitle = count == 0 ? "NEW PROJECT" : "NEW PROJECT ${count + 1}";
+    
+    final newProject = ProjectPage(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      title: uniqueTitle,
+      cells: [],
+    );
+    
+    projects.add(newProject);
+    notifyListeners();
+  }
 
   void renameProject(int index, String newTitle) {
     if (index >= 0 && index < _projects.length) {
@@ -94,18 +96,33 @@ void addNewProject(String baseName) {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: type == "IMAGE" ? FileType.image : FileType.custom,
         allowedExtensions: type == "PDF" ? ['pdf'] : null,
+        allowMultiple: type == "IMAGE",
       );
 
-      if (result != null && result.files.single.path != null) {
-        content = result.files.single.path!;
-        title = type == "PDF" ? result.files.single.name : "";
+      if (result != null && result.files.isNotEmpty) {
+        if (type == "IMAGE") {
+          final paths = result.files
+              .where((f) => f.path != null && f.path!.isNotEmpty)
+              .map((f) => f.path!)
+              .toList();
+          if (paths.isEmpty) return null;
+          content = jsonEncode(paths);
+          title = paths.length > 1 ? '${paths.length} images' : '';
+        } else if (result.files.single.path != null) {
+          content = result.files.single.path!;
+          title = result.files.single.name;
+        } else {
+          return null;
+        }
       } else {
         return null;
       }
     }
 
+    // HIGH-PRECISION TIMESTAMP ID LINKED TO TYPE
+    // This allows unique Key bindings for implicit list mounting animations
     final newCell = ProjectCell(
-      id: DateTime.now().toString(),
+      id: '${type.toLowerCase()}_${DateTime.now().microsecondsSinceEpoch}',
       type: type.toLowerCase(),
       title: title,
       content: content,
@@ -117,9 +134,19 @@ void addNewProject(String baseName) {
   }
 
   Future<void> replaceImageCell(int projectIndex, int cellIndex) async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.image);
-    if (result != null && result.files.single.path != null) {
-      _projects[projectIndex].cells[cellIndex].content = result.files.single.path!;
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      allowMultiple: true,
+    );
+    if (result != null && result.files.isNotEmpty) {
+      final paths = result.files
+          .where((f) => f.path != null && f.path!.isNotEmpty)
+          .map((f) => f.path!)
+          .toList();
+      if (paths.isEmpty) return;
+      _projects[projectIndex].cells[cellIndex].imagePaths = paths;
+      _projects[projectIndex].cells[cellIndex].title =
+          paths.length > 1 ? '${paths.length} images' : '';
       notifyListeners();
     }
   }
@@ -149,54 +176,67 @@ void addNewProject(String baseName) {
     }
   }
 
-  bool _isGenerating = false;
-bool get isGenerating => _isGenerating;
-
-Future<void> generateAIContent() async {
-  _isGenerating = true;
-  notifyListeners();
-
-  try {
-    // 1. SET LOADING STATE
-    currentProject.caseStudy = CaseStudyData(
-      problem: "Analyzing constraints...",
-      objectives: "Defining goals...",
-      methodology: "Synthesizing process...",
-      solution: "Curation in progress...",
-    );
+  // --- STATE MUTATION LINK NODE ---
+  void finalizeCaseStudy(bool savedState) {
+    currentProject.isSaved = savedState;
     notifyListeners();
-
-    // 2. CALL API
-    final String aiResult = await _geminiService.getCaseStudy(currentProject.cells);
-    print("GEMINI SUCCESS: $aiResult");
-
-    // 3. THE SLICER (Parsing logic)
-    // This function looks for "HEADER: content" and stops at the next header
-    String extractSection(String header) {
-      final regExp = RegExp('$header\\s*(.*?)(?=(PROBLEM:|OBJECTIVES:|METHODOLOGY:|SOLUTION:|\$))', 
-          dotAll: true, caseSensitive: false);
-      final match = regExp.firstMatch(aiResult);
-      return match?.group(1)?.trim() ?? "Information not found.";
-    }
-
-    // 4. ASSIGN INDIVIDUAL SECTIONS
-    currentProject.caseStudy = CaseStudyData(
-      problem: extractSection("PROBLEM:"),
-      objectives: extractSection("OBJECTIVES:"),
-      methodology: extractSection("METHODOLOGY:"),
-      designDecisions: "Automated based on project visual hierarchy.",
-      solution: extractSection("SOLUTION:"),
-      results: "Optimized for professional showcase.",
-    );
-
-  } catch (e) {
-    print("DEBUG API ERROR: $e");
-    currentProject.caseStudy = CaseStudyData(
-      solution: "Failed to parse AI response. Error: $e",
-    );
   }
 
-  _isGenerating = false;
-  notifyListeners();
-}
+  // --- GENERATION ENGINE LAYER ---
+  bool _isGenerating = false;
+  bool get isGenerating => _isGenerating;
+  Future<void> generateAIContent() async {
+    _isGenerating = true;
+    notifyListeners();
+
+    try {
+      // 1. DYNAMIC INDETERMINATE LOADING STATE
+      currentProject.caseStudy = CaseStudyData(
+        problem: "Analyzing architectural constraints...",
+        objectives: "Defining project milestones...",
+        methodology: "Synthesizing process cycles...",
+        designDecisions: "Reviewing spatial layout configurations...",
+        solution: "Curation in progress...",
+        results: "Optimizing presentation blocks...",
+      );
+      notifyListeners();
+
+      // 2. DISPATCH ASYMMETRIC API REQUEST
+      final String aiResult = await _geminiService.getCaseStudy(currentProject.cells);
+
+      final sections = _geminiService.parseCaseStudySections(aiResult);
+
+      currentProject.caseStudy = CaseStudyData(
+        overview: sections['OVERVIEW'] ?? '',
+        problem: sections['PROBLEM'] ?? '',
+        objectives: sections['OBJECTIVES'] ?? '',
+        methodology: sections['METHODOLOGY'] ?? '',
+        designDecisions: sections['DESIGN DECISIONS'] ?? '',
+        solution: sections['SOLUTION'] ?? '',
+        results: sections['RESULTS'] ?? '',
+      );
+
+    } catch (e) {
+      print("DEBUG CRITICAL API ERROR: $e");
+      currentProject.caseStudy = CaseStudyData(
+        solution: "Failed to construct architectural payload views. Details: $e",
+      );
+    }
+
+    _isGenerating = false;
+    notifyListeners();
+  }
+
+bool _isLightMode = false;
+  bool get isLightMode => _isLightMode;
+
+  /// Legacy alias — polka mode is now app light mode.
+  bool get isPolkaDotBackground => _isLightMode;
+
+  void toggleLightMode() {
+    _isLightMode = !_isLightMode;
+    notifyListeners();
+  }
+
+  void toggleBackgroundTheme() => toggleLightMode();
 }

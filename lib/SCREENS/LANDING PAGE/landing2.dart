@@ -1,11 +1,7 @@
-import 'package:flutter/material.dart';
+/*import 'package:flutter/material.dart';
 import 'package:kael/SCREENS/LOGIN%20%7C%20SIGNUP/login.dart';
 import 'package:kael/SCREENS/LOGIN%20%7C%20SIGNUP/signup.dart';
 import 'package:video_player/video_player.dart';
-
-// Import your pages here so the navigation works:
-// import 'login_page.dart';
-// import 'signup_page.dart';
 
 class WelcomeScreen2 extends StatefulWidget {
   const WelcomeScreen2({super.key});
@@ -154,3 +150,4 @@ Widget _button(String text, VoidCallback onTap) {
     ),
   );
 }
+*/

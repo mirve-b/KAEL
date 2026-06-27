@@ -1,0 +1,269 @@
+import 'dart:ui';
+import 'package:flutter/material.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:kael/SCREENS/FORMS/DATA%20MODEL/user_data_model.dart';
+import 'package:kael/SCREENS/GLOBAL%20WIDGETS/kael_theme.dart';
+import 'package:kael/SCREENS/HOME/PROVIDER/project_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:kael/SCREENS/HOME/WIDGETS/casestudy/home_casestudy.dart';
+import 'package:kael/SCREENS/HOME/WIDGETS/portfolio/portfolio_about_section.dart';
+import 'package:kael/SCREENS/HOME/WIDGETS/portfolio/portfolio_empty_state.dart';
+import 'package:kael/SCREENS/HOME/WIDGETS/portfolio/portfolio_hero_banner.dart';
+import 'package:kael/SCREENS/HOME/WIDGETS/portfolio/portfolio_project_grid.dart';
+
+class HomePortfolio extends StatefulWidget {
+  final UserDataModel userData;
+  final ProjectProvider projectsProvider;
+  final bool isGenerated;
+  final VoidCallback onGenerateTap;
+  final String? activeProjectId;
+  final Function(String?) onProjectSelect;
+
+  const HomePortfolio({
+    super.key,
+    required this.userData,
+    required this.projectsProvider,
+    required this.isGenerated,
+    required this.onGenerateTap,
+    required this.activeProjectId,
+    required this.onProjectSelect,
+  });
+
+  @override
+  State<HomePortfolio> createState() => _HomePortfolioState();
+}
+
+class _HomePortfolioState extends State<HomePortfolio> {
+  @override
+  void initState() {
+    super.initState();
+    widget.userData.addListener(_refresh);
+  }
+
+  @override
+  void dispose() {
+    widget.userData.removeListener(_refresh);
+    super.dispose();
+  }
+
+  void _refresh() => setState(() {});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: widget.userData,
+      builder: (context, _) {
+        if (widget.activeProjectId != null) {
+          final activeProject = widget.projectsProvider.projects.firstWhere(
+            (p) => p.id == widget.activeProjectId,
+            orElse: () => widget.projectsProvider.projects.first,
+          );
+
+          return Container(
+            color: const Color.fromARGB(255, 18, 18, 18),
+            child: CaseStudyView(
+              project: activeProject,
+              onBackToEdit: () => widget.onProjectSelect(null),
+              onDonePressed: () => widget.onProjectSelect(null),
+            ),
+          );
+        }
+
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            return Column(
+              children: [
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 400),
+                      child: !widget.isGenerated
+                          ? PortfolioEmptyState(onGenerateTap: widget.onGenerateTap)
+                          : _buildLivePortfolioCanvas(constraints.maxWidth),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: constraints.maxWidth,
+                  child: PortfolioCustomizer(userData: widget.userData),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildLivePortfolioCanvas(double width) {
+    final theme = KaelTheme.of(context.watch<ProjectProvider>().isLightMode);
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 500),
+      width: width,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(25),
+        border: Border.all(color: theme.sidebarBorder.withValues(alpha: 0.35)),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(25),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+          child: Container(
+            color: Color.alphaBlend(
+              widget.userData.portfolioBgColor.withValues(alpha: 0.32),
+              theme.panelBackground,
+            ),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+              child: DefaultTextStyle(
+                style: TextStyle(
+                  fontFamily: widget.userData.fontFamily,
+                  color: widget.userData.textColor,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    PortfolioHeroBanner(userData: widget.userData),
+                    const SizedBox(height: 10),
+                    PortfolioAboutSection(userData: widget.userData),
+                    const SizedBox(height: 10),
+                    PortfolioProjectGrid(
+                      projectsProvider: widget.projectsProvider,
+                      onProjectSelect: widget.onProjectSelect,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class PortfolioCustomizer extends StatefulWidget {
+  final UserDataModel userData;
+  const PortfolioCustomizer({super.key, required this.userData});
+
+  @override
+  State<PortfolioCustomizer> createState() => _PortfolioCustomizerState();
+}
+
+class _PortfolioCustomizerState extends State<PortfolioCustomizer> {
+  void _pickColor(bool isBg) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(isBg ? 'Background Color' : 'Text Color'),
+        content: SingleChildScrollView(
+          child: ColorPicker(
+            pickerColor: isBg ? widget.userData.portfolioBgColor : widget.userData.textColor,
+            onColorChanged: (c) => widget.userData.updatePortfolioTheme(bg: isBg ? c : null, text: isBg ? null : c),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showFontOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        margin: const EdgeInsets.all(20),
+        decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(20)),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: ['Inter', 'Serif', 'Monospace'].map((f) => ListTile(
+            title: Text(f, style: TextStyle(fontFamily: f, color: Colors.white)),
+            onTap: () {
+              widget.userData.updatePortfolioTheme(font: f);
+              Navigator.pop(context);
+            },
+          )).toList(),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 50,
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      decoration: BoxDecoration(
+        color: const Color.fromARGB(255, 0, 0, 0),
+        borderRadius: BorderRadius.circular(25),
+        border: Border.all(color: Colors.white12),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text("STYLE", style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 2)),
+          const SizedBox(width: 20),
+          _CustomBouncyButton(label: "FONT", onTap: _showFontOptions),
+          _CustomBouncyButton(label: "TEXT COLOUR", onTap: () => _pickColor(false)),
+          _CustomBouncyButton(label: "BG COLOUR", onTap: () => _pickColor(true)),
+        ],
+      ),
+    );
+  }
+}
+
+class _CustomBouncyButton extends StatefulWidget {
+  final String label;
+  final VoidCallback onTap;
+  const _CustomBouncyButton({required this.label, required this.onTap});
+
+  @override
+  State<_CustomBouncyButton> createState() => _CustomBouncyButtonState();
+}
+
+class _CustomBouncyButtonState extends State<_CustomBouncyButton> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedPadding(
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOutBack,
+        padding: EdgeInsets.symmetric(horizontal: _isHovered ? 20 : 5),
+        child: GestureDetector(
+          onTap: widget.onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            curve: Curves.easeOutBack,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+            decoration: BoxDecoration(
+              color: _isHovered 
+                  ? const Color.fromARGB(140, 127, 98, 39) 
+                  : const Color.fromARGB(60, 127, 98, 39),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: _isHovered ? const Color.fromARGB(150, 212, 195, 163) : Colors.transparent,
+              ),
+            ),
+            child: Text(
+              widget.label,
+              style: TextStyle(
+                color: _isHovered ? const Color(0xFFD4C3A3) : const Color.fromARGB(255, 191, 178, 160),
+                fontSize: 11,
+                fontWeight: _isHovered ? FontWeight.bold : FontWeight.normal,
+                letterSpacing: 1.1,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

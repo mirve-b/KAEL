@@ -13,24 +13,19 @@ class Form4 extends StatefulWidget {
 class _Form4State extends State<Form4> with TickerProviderStateMixin {
   late AnimationController _controller;
   bool _showButton = false;
+  bool _isNextHovered = false;
+  String? _hoveredInterest;
 
-  // Controllers
   final List<TextEditingController> _skillControllers = [TextEditingController()];
   final TextEditingController _hobbiesController = TextEditingController();
 
-  // Multi-select state
   final Set<String> _selectedInterests = {};
   final List<String> _interestOptions = [
-    "Research & Academia",
-    "Creative Arts & Design",
-    "Writing & Storytelling",
-    "Tech & Digital Innovation",
-    "Media & Communication",
-    "Psychology & Humanities",
-    "Social Impact & Culture",
-    "Career & Entrepreneurship",
-    "Fashion & Aesthetics",
-    "Music & Audio Production"
+    "Research & Academia", "Creative Arts & Design",
+    "Writing & Storytelling", "Tech & Digital Innovation",
+    "Media & Communication", "Psychology & Humanities",
+    "Social Impact & Culture", "Career & Entrepreneurship",
+    "Fashion & Aesthetics", "Music & Audio Production"
   ];
 
   @override
@@ -40,11 +35,9 @@ class _Form4State extends State<Form4> with TickerProviderStateMixin {
       vsync: this,
       duration: const Duration(milliseconds: 2500),
     );
-
     Future.delayed(const Duration(milliseconds: 100), () {
       if (mounted) _controller.forward();
     });
-
     _controller.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         if (mounted) setState(() => _showButton = true);
@@ -52,21 +45,15 @@ class _Form4State extends State<Form4> with TickerProviderStateMixin {
     });
   }
 
-  void _addSkillField() {
-    setState(() {
-      _skillControllers.add(TextEditingController());
-    });
-  }
+  void _addSkillField() => setState(() => _skillControllers.add(TextEditingController()));
 
-  void _toggleInterest(String interest) {
-    setState(() {
-      if (_selectedInterests.contains(interest)) {
-        _selectedInterests.remove(interest);
-      } else {
-        _selectedInterests.add(interest);
-      }
-    });
-  }
+  void _toggleInterest(String interest) => setState(() {
+    if (_selectedInterests.contains(interest)) {
+      _selectedInterests.remove(interest);
+    } else {
+      _selectedInterests.add(interest);
+    }
+  });
 
   @override
   void dispose() {
@@ -86,17 +73,30 @@ class _Form4State extends State<Form4> with TickerProviderStateMixin {
     );
 
     return Scaffold(
-      backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Back Button
+          Container(
+            decoration: const BoxDecoration(
+              gradient: RadialGradient(
+                center: Alignment.topLeft,
+                radius: 1.2,
+                colors: [Color(0xFF8B0000), Colors.black],
+              ),
+            ),
+          ),
           Positioned(
             top: 40,
             left: 20,
-            child: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                  color: Color.fromARGB(146, 207, 187, 156), size: 20),
-              onPressed: () => Navigator.pop(context),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                      color: Color.fromARGB(146, 207, 187, 156), size: 20),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                const SizedBox(width: 10),
+                const Text("04/ 04", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+              ],
             ),
           ),
           Center(
@@ -110,25 +110,13 @@ class _Form4State extends State<Form4> with TickerProviderStateMixin {
                     const SizedBox(height: 100),
                     _buildHeaderReveal(),
                     const SizedBox(height: 60),
-
-                    // Skills Section
                     _buildLabelOnly("List your key skills (AI, writing, art, coding, etc.)", skillsAnimation),
-                    ..._skillControllers.map((controller) => 
-                      _buildMinimalField(controller, animation: skillsAnimation)
-                    ),
-                    
+                    ..._skillControllers.map((controller) => _buildMinimalField(controller, animation: skillsAnimation)),
                     _buildPlusButton(0.4, 0.6),
-                    
                     const SizedBox(height: 40),
-                    
-                    // Interests Multi-Select Section
                     _buildInterestGrid(0.5, 0.8),
-                    
                     const SizedBox(height: 40),
-                    
-                    // Hobbies Section
                     _buildAnimatedTextField("Hobbies / Personal Interests", 0.7, 0.9, _hobbiesController),
-                    
                     const SizedBox(height: 60),
                     _buildNextButton(),
                     const SizedBox(height: 60),
@@ -152,15 +140,9 @@ class _Form4State extends State<Form4> with TickerProviderStateMixin {
           child: Align(
             alignment: Alignment.centerLeft,
             widthFactor: animation.value,
-            child: const Text(
-              "LET’S HIGHLIGHT WHAT YOU’RE GREAT AT!",
+            child: const Text("LET’S HIGHLIGHT WHAT YOU’RE GREAT AT!",
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 20,
-                letterSpacing: 1.5,
-                fontFamily: 'Serif',
-                color: Color(0xFFD4C3A3),
-              ),
+              style: TextStyle(fontSize: 20, letterSpacing: 1.5, fontFamily: 'Serif', color: Color(0xFFD4C3A3)),
             ),
           ),
         ),
@@ -177,8 +159,7 @@ class _Form4State extends State<Form4> with TickerProviderStateMixin {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "Choose your main interest areas (multi-select):",
+            const Text("Choose your main interest areas (multi-select):",
               style: TextStyle(color: Color.fromARGB(179, 185, 174, 152), fontSize: 14, fontWeight: FontWeight.w300),
             ),
             const SizedBox(height: 20),
@@ -188,23 +169,28 @@ class _Form4State extends State<Form4> with TickerProviderStateMixin {
               alignment: WrapAlignment.center,
               children: _interestOptions.map((interest) {
                 bool isSelected = _selectedInterests.contains(interest);
-                return GestureDetector(
-                  onTap: () => _toggleInterest(interest),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isSelected ? const Color.fromARGB(80, 128, 119, 106) : const Color.fromARGB(20, 128, 119, 106),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: isSelected ? const Color(0xFFD4C3A3) : const Color.fromARGB(40, 128, 119, 106),
-                        width: 0.7,
+                bool isHovered = _hoveredInterest == interest;
+                return MouseRegion(
+                  onEnter: (_) => setState(() => _hoveredInterest = interest),
+                  onExit: (_) => setState(() => _hoveredInterest = null),
+                  child: GestureDetector(
+                    onTap: () => _toggleInterest(interest),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isSelected ? const Color.fromARGB(150, 139, 0, 0) : (isHovered ? const Color.fromARGB(40, 128, 119, 106) : const Color.fromARGB(20, 128, 119, 106)),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isSelected ? Colors.red : const Color.fromARGB(40, 128, 119, 106),
+                          width: 0.7,
+                        ),
                       ),
-                    ),
-                    child: Text(
-                      interest,
-                      style: TextStyle(
-                        color: isSelected ? Color.fromARGB(255, 181, 166, 139) : const Color.fromARGB(150, 212, 195, 163),
-                        fontSize: 12,
+                      child: Text(interest,
+                        style: TextStyle(
+                          color: isSelected ? Colors.white : const Color.fromARGB(150, 212, 195, 163),
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                   ),
@@ -314,42 +300,47 @@ class _Form4State extends State<Form4> with TickerProviderStateMixin {
     return AnimatedOpacity(
       duration: const Duration(milliseconds: 800),
       opacity: _showButton ? 1.0 : 0.0,
-      child: SizedBox(
-        width: double.infinity,
-        height: 30,
-        child: OutlinedButton(
-onPressed: _showButton 
-    ? () {
-        // Collect dynamic skills
-        List<String> collectedSkills = _skillControllers
-            .map((c) => c.text.trim())
-            .where((text) => text.isNotEmpty)
-            .toList();
-
-        // Save to Provider
-        Provider.of<UserDataModel>(context, listen: false).updateForm4(
-          skillList: collectedSkills,
-          interestSet: _selectedInterests,
-          hobbyText: _hobbiesController.text,
-        );
-
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => Done()),
-        );
-      } 
-    : null,
-          style: TextButton.styleFrom(
-                            backgroundColor: const Color.fromARGB(138, 90, 83, 73),
-                            foregroundColor: const Color.fromARGB(255, 0, 0, 0),
-                            side: BorderSide(color:  Color.fromARGB(255, 128, 119, 106), width: 0.7),
-                            shape: RoundedRectangleBorder(
-                             borderRadius: BorderRadius.circular(15),
-                            ),
-                          ),
-          child: const Text("Next", style: TextStyle(color: Color.fromARGB(255, 191, 178, 160), letterSpacing: 1.2)),
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _isNextHovered = true),
+        onExit: (_) => setState(() => _isNextHovered = false),
+        child: AnimatedScale(
+          scale: _isNextHovered ? 1.05 : 1.0,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutBack,
+          child: SizedBox(
+            width: double.infinity,
+            height: 30,
+            child: ElevatedButton(
+              onPressed: () {
+                List<String> collectedSkills = _skillControllers
+                    .map((c) => c.text.trim())
+                    .where((text) => text.isNotEmpty)
+                    .toList();
+                if (collectedSkills.isEmpty || _selectedInterests.isEmpty || _hobbiesController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text("Please complete all fields and select interests."),
+                    backgroundColor: Colors.red,
+                  ));
+                  return;
+                }
+                Provider.of<UserDataModel>(context, listen: false).updateForm4(
+                  skillList: collectedSkills,
+                  interestSet: _selectedInterests,
+                  hobbyText: _hobbiesController.text.trim(),
+                );
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const Done()));
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red[900],
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+              ),
+              child: const Text("Next", style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+            ),
+          ),
         ),
       ),
     );
   }
+
 }

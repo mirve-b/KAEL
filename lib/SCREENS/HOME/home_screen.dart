@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:kael/SCREENS/GLOBAL%20WIDGETS/kael_tab_bar.dart';
-import 'package:kael/SCREENS/HOME/WIDGETS/home_canvas.dart';
-import 'package:kael/SCREENS/HOME/WIDGETS/home_sidebar.dart';
+import 'package:kael/SCREENS/GLOBAL%20WIDGETS/workspace_background.dart';
+import 'package:kael/SCREENS/HOME/WIDGETS/Catalog/home_catalog_canvas.dart';
+import 'package:kael/SCREENS/HOME/WIDGETS/sidebar/home_sidebar.dart';
 import 'package:provider/provider.dart';
 import 'package:kael/SCREENS/FORMS/DATA%20MODEL/user_data_model.dart';
 import 'package:kael/SCREENS/HOME/PROVIDER/project_provider.dart';
@@ -13,10 +14,21 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
+  bool isPortfolioGenerated = false; 
   bool isPreviewMode = false;
   String currentNavSection = "CATALOG";
-  List<String> openTabIds = ['0']; 
+  
+  // --- ANIMATION STATE ---
+  late AnimationController _notificationController;
+  late Animation<Offset> _notificationSlideAnimation;
+  bool _showWelcomeNotification = false;
+
+  // --- TAB STATE ENGINES ---
+  List<String> openTabIds = ['0'];
+  List<String> openPortfolioTabIds = [];
+  String? activePortfolioProjectId;
+
   int? editingCellIndex;
   int? editingProjectIndex;
   late TextEditingController _textController;
@@ -29,6 +41,31 @@ class _HomeScreenState extends State<HomeScreen> {
     _textController = TextEditingController();
     _textFocusNode.addListener(() {
       if (!_textFocusNode.hasFocus && editingCellIndex != null) _saveCurrentEdit();
+    });
+
+    // --- WELCOME NOTIFICATION ANIMATION ---
+    _notificationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+
+    _notificationSlideAnimation = Tween<Offset>(
+      begin: const Offset(1.5, 0),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _notificationController, curve: Curves.easeOutBack));
+
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        setState(() => _showWelcomeNotification = true);
+        _notificationController.forward();
+        Future.delayed(const Duration(seconds: 4), () {
+          if (mounted) {
+            _notificationController.reverse().then((_) {
+              if (mounted) setState(() => _showWelcomeNotification = false);
+            });
+          }
+        });
+      }
     });
   }
 
@@ -63,7 +100,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _showDeleteConfirmation(int idx, String title, ProjectProvider projects) {
     final String idToDelete = projects.projects[idx].id;
-
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -76,6 +112,10 @@ class _HomeScreenState extends State<HomeScreen> {
           TextButton(onPressed: () {
             setState(() {
               openTabIds.remove(idToDelete);
+              openPortfolioTabIds.remove(idToDelete);
+              if (activePortfolioProjectId == idToDelete) {
+                activePortfolioProjectId = openPortfolioTabIds.isNotEmpty ? openPortfolioTabIds.last : null;
+              }
             });
             projects.deleteProject(idx); 
             Navigator.pop(context);
@@ -86,134 +126,219 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   @override
-  void dispose() { _textController.dispose(); _textFocusNode.dispose(); super.dispose(); }
+  void dispose() { 
+    _textController.dispose(); 
+    _textFocusNode.dispose(); 
+    _notificationController.dispose(); 
+    super.dispose(); 
+  }
 
   @override
   Widget build(BuildContext context) {
     final userData = Provider.of<UserDataModel>(context);
     final projectData = Provider.of<ProjectProvider>(context);
 
-    return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 22, 22, 22),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 30),
-        child: Row(
-          children: [
-            HomeSidebar(
-              userData: userData, 
-              projectData: projectData, 
-              isCatalogExpanded: isCatalogExpanded, 
-              openTabIds: openTabIds,
-              currentNavSection: currentNavSection, // NEW
-              onSectionTap: (section) {             // NEW
-                setState(() {
-                  currentNavSection = section;
-                  if (section == "CATALOG") isCatalogExpanded = true;
-                });
-              },
-              onToggleCatalog: () {
-                setState(() {
-                  currentNavSection = "CATALOG";
-                  isCatalogExpanded = !isCatalogExpanded;
-                });
-              },
-              onProjectTap: (idx) {
-                final project = projectData.projects[idx];
-                projectData.selectProject(idx);
-                setState(() {
-                  currentNavSection = "CATALOG";
-                  isPreviewMode = false;
-                  if (!openTabIds.contains(project.id)) {
-                    openTabIds.add(project.id);
-                  }
-                });
-              },
-              onRenameRequest: (idx, title) => _showRenameDialog(idx, title, projectData),
-              onDeleteRequest: (idx, title) => _showDeleteConfirmation(idx, title, projectData),
-            ),
-            const SizedBox(width: 20),
-            Expanded(
-              child: Column(
-                children: [
-                  KaelTabBar(
-  leadingLabel: "Project Catalog",
-  tabs: openTabIds.map((id) => projectData.projects.firstWhere((p) => p.id == id).title).toList(),
-  activeTab: openTabIds.isEmpty ? "" : projectData.currentProject.title,
-  
-  onTabTap: (title) {
-    int idx = projectData.projects.indexWhere((p) => p.title == title);
-    if (idx != -1) {
-      projectData.selectProject(idx);
-      setState(() {
-        currentNavSection = "CATALOG";
-        isPreviewMode = false;
-      });
-    }
-  },
-  
-  onTabClose: (title) {
-    setState(() {
-      final String idToClose = projectData.projects.firstWhere((p) => 
-        p.title == title && openTabIds.contains(p.id)
-      ).id;
-      
-      int indexInOpenTabs = openTabIds.indexOf(idToClose);
+    bool isPortfolioMode = currentNavSection == "PORTFOLIO";
+    
+    String derivedLeadingLabel = isPortfolioMode ? "Portfolio View" : "Project Catalog";
+    
+    List<String> derivedTabs = isPortfolioMode
+        ? openPortfolioTabIds.map((id) => projectData.projects.firstWhere((p) => p.id == id).title).toList()
+        : openTabIds.map((id) => projectData.projects.firstWhere((p) => p.id == id).title).toList();
 
-      if (indexInOpenTabs != -1) {
-        openTabIds.removeAt(indexInOpenTabs);
-
-        if (projectData.currentProject.id == idToClose) {
-          if (openTabIds.isNotEmpty) {
-            String nextId = (indexInOpenTabs > 0) ? openTabIds[indexInOpenTabs - 1] : openTabIds[0];
-            int nextIdx = projectData.projects.indexWhere((p) => p.id == nextId);
-            projectData.selectProject(nextIdx);
-          }
-        }
+    String derivedActiveTab = "";
+    if (isPortfolioMode) {
+      if (activePortfolioProjectId != null) {
+        derivedActiveTab = projectData.projects.firstWhere((p) => p.id == activePortfolioProjectId).title;
       }
-    });
-  },
-),
-                  const SizedBox(height: 20),
-                  Expanded(
-                    child: HomeCanvas(
-                      selectedSection: currentNavSection, // NEW
-                      projects: projectData, 
-                      openTabIds: openTabIds, 
-                      editingCellIndex: editingCellIndex, 
-                      editingProjectIndex: editingProjectIndex,
-                      textController: _textController, 
-                      textFocusNode: _textFocusNode,
-                      onSaveEdit: _saveCurrentEdit,
-                      isPreviewMode: isPreviewMode, 
-                      onTogglePreview: (val) {
-                        setState(() {
-                          isPreviewMode = val;
-                        });
-                      },
-                      onStartEdit: (pIdx, cIdx, content) {
-                        setState(() { 
-                          editingCellIndex = cIdx; 
-                          editingProjectIndex = pIdx; 
-                          _textController.text = content; 
-                        });
-                      },
-                      onAddText: () async {
-                        int? newIdx = await projectData.addCellToCurrentProject("TEXT");
-                        if (newIdx != null) {
-                          setState(() { 
-                            editingCellIndex = newIdx; 
-                            editingProjectIndex = projectData.currentIndex; 
-                            _textController.clear(); 
-                          });
+    } else {
+      derivedActiveTab = openTabIds.isEmpty ? "" : projectData.currentProject.title;
+    }
+
+    return Scaffold(
+      body: Stack(
+        children: [
+          
+          WorkspaceBackground(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 30),
+              child: Row(
+                children: [
+                  HomeSidebar(
+                    userData: userData, 
+                    projectData: projectData, 
+                    isCatalogExpanded: isCatalogExpanded, 
+                    openTabIds: openTabIds,
+                    currentNavSection: currentNavSection, 
+                    onSectionTap: (section) {             
+                      setState(() {
+                        currentNavSection = section;
+                        if (section == "CATALOG") isCatalogExpanded = true;
+                      });
+                    },
+                    onToggleCatalog: () {
+                      setState(() {
+                        currentNavSection = "CATALOG";
+                        isCatalogExpanded = !isCatalogExpanded;
+                      });
+                    },
+                    onProjectTap: (idx) {
+                      final project = projectData.projects[idx];
+                      projectData.selectProject(idx);
+                      setState(() {
+                        currentNavSection = "CATALOG";
+                        isPreviewMode = false;
+                        if (!openTabIds.contains(project.id)) {
+                          openTabIds.add(project.id);
                         }
-                      },
+                      });
+                    },
+                    onRenameRequest: (idx, title) => _showRenameDialog(idx, title, projectData),
+                    onDeleteRequest: (idx, title) => _showDeleteConfirmation(idx, title, projectData),
+                  ),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        KaelTabBar(
+                          leadingLabel: derivedLeadingLabel,
+                          tabs: derivedTabs,
+                          activeTab: derivedActiveTab,
+                          onTabTap: (title) {
+                            int idx = projectData.projects.indexWhere((p) => p.title == title);
+                            if (idx != -1) {
+                              final tappedProject = projectData.projects[idx];
+                              setState(() {
+                                if (isPortfolioMode) {
+                                  activePortfolioProjectId = tappedProject.id;
+                                } else {
+                                  projectData.selectProject(idx);
+                                  isPreviewMode = false;
+                                }
+                              });
+                            }
+                          },
+                          onTabClose: (title) {
+                            setState(() {
+                              final String idToClose = projectData.projects.firstWhere((p) => p.title == title).id;
+                              
+                              if (isPortfolioMode) {
+                                int indexInOpenTabs = openPortfolioTabIds.indexOf(idToClose);
+                                if (indexInOpenTabs != -1) {
+                                  openPortfolioTabIds.removeAt(indexInOpenTabs);
+                                  if (activePortfolioProjectId == idToClose) {
+                                    if (openPortfolioTabIds.isNotEmpty) {
+                                      activePortfolioProjectId = (indexInOpenTabs > 0) 
+                                          ? openPortfolioTabIds[indexInOpenTabs - 1] 
+                                          : openPortfolioTabIds[0];
+                                    } else {
+                                      activePortfolioProjectId = null;
+                                    }
+                                  }
+                                }
+                              } else {
+                                int indexInOpenTabs = openTabIds.indexOf(idToClose);
+                                if (indexInOpenTabs != -1) {
+                                  openTabIds.removeAt(indexInOpenTabs);
+                                  if (projectData.currentProject.id == idToClose) {
+                                    if (openTabIds.isNotEmpty) {
+                                      String nextId = (indexInOpenTabs > 0) ? openTabIds[indexInOpenTabs - 1] : openTabIds[0];
+                                      int nextIdx = projectData.projects.indexWhere((p) => p.id == nextId);
+                                      projectData.selectProject(nextIdx);
+                                    }
+                                  }
+                                }
+                              }
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                        Expanded(
+                          child: HomeCanvas(
+                            selectedSection: currentNavSection, 
+                            userData: userData, 
+                            projects: projectData, 
+                            openTabIds: openTabIds, 
+                            editingCellIndex: editingCellIndex, 
+                            editingProjectIndex: editingProjectIndex,
+                            textController: _textController, 
+                            textFocusNode: _textFocusNode,
+                            onSaveEdit: _saveCurrentEdit,
+                            isPreviewMode: isPreviewMode, 
+                            onTogglePreview: (val) {
+                              setState(() {
+                                isPreviewMode = val;
+                              });
+                            },
+                            onStartEdit: (pIdx, cIdx, content) {
+                              setState(() { 
+                                editingCellIndex = cIdx; 
+                                editingProjectIndex = pIdx; 
+                                _textController.text = content; 
+                              });
+                            },
+                            onAddText: () async {
+                              int? newIdx = await projectData.addCellToCurrentProject("TEXT");
+                              if (newIdx != null) {
+                                setState(() { 
+                                  editingCellIndex = newIdx; 
+                                  editingProjectIndex = projectData.currentIndex; 
+                                  _textController.clear(); 
+                                });
+                              }
+                            },
+                            isPortfolioGenerated: isPortfolioGenerated,
+                            onGeneratePortfolio: () {
+                              setState(() {
+                                isPortfolioGenerated = true;
+                              });
+                            },
+                            activePortfolioProjectId: activePortfolioProjectId,
+                            onPortfolioProjectSelected: (id) {
+                              setState(() {
+                                if (id != null) {
+                                  if (!openPortfolioTabIds.contains(id)) {
+                                    openPortfolioTabIds.add(id);
+                                  }
+                                  activePortfolioProjectId = id;
+                                } else {
+                                  activePortfolioProjectId = null;
+                                }
+                              });
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+          
+          // --- WELCOME NOTIFICATION OVERLAY ---
+          if (_showWelcomeNotification)
+            Positioned(
+              top: 50,
+              right: 30,
+              child: SlideTransition(
+                position: _notificationSlideAnimation,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 15),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A1A1A),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFD4C3A3)),
+                    boxShadow: [const BoxShadow(color: Colors.black45, blurRadius: 10)],
+                  ),
+                  child: Text(
+                    "WELCOME ${userData.fullName.toUpperCase()}",
+                    style: const TextStyle(color: Colors.white, letterSpacing: 1.5, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

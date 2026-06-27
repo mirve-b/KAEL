@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class ProjectCell {
   String id;
   String type;
@@ -10,6 +12,23 @@ class ProjectCell {
     required this.title,
     required this.content,
   });
+
+  /// Image cells store a JSON array of local file paths.
+  List<String> get imagePaths {
+    if (type != 'image') return [];
+    if (content.isEmpty) return [];
+    try {
+      final decoded = jsonDecode(content);
+      if (decoded is List) {
+        return decoded.map((e) => e.toString()).where((p) => p.isNotEmpty).toList();
+      }
+    } catch (_) {}
+    return [content];
+  }
+
+  set imagePaths(List<String> paths) {
+    content = jsonEncode(paths);
+  }
 
   Map<String, dynamic> toMap() => {
         'id': id,
@@ -33,13 +52,30 @@ class ProjectPage {
   String title;
   List<ProjectCell> cells;
   CaseStudyData? caseStudy;
+  bool isSaved;
 
-  ProjectPage({required this.id, required this.title, required this.cells});
+  ProjectPage({
+    required this.id,
+    required this.title,
+    required this.cells,
+    this.caseStudy,
+    this.isSaved = false,
+  });
+
+  List<String> get allImagePaths {
+    return cells
+        .where((c) => c.type == 'image')
+        .expand((c) => c.imagePaths)
+        .where((p) => p.isNotEmpty)
+        .toList();
+  }
 
   Map<String, dynamic> toMap() => {
         'id': id,
         'title': title,
         'cells': cells.map((c) => c.toMap()).toList(),
+        'isSaved': isSaved,
+        'caseStudy': caseStudy?.toMap(),
       };
 
   factory ProjectPage.fromMap(Map<String, dynamic> map) {
@@ -49,12 +85,12 @@ class ProjectPage {
       cells: (map['cells'] as List? ?? [])
           .map((c) => ProjectCell.fromMap(c))
           .toList(),
+      isSaved: map['isSaved'] ?? false,
+      caseStudy: map['caseStudy'] != null ? CaseStudyData.fromMap(map['caseStudy']) : null,
     );
   }
 }
 
-
-//CASE STUDY
 class CaseStudyData {
   String overview;
   String problem;
@@ -73,6 +109,16 @@ class CaseStudyData {
     this.solution = "",
     this.results = "",
   });
+
+  Map<String, dynamic> toMap() => {
+        'overview': overview,
+        'problem': problem,
+        'objectives': objectives,
+        'methodology': methodology,
+        'designDecisions': designDecisions,
+        'solution': solution,
+        'results': results,
+      };
 
   factory CaseStudyData.fromMap(Map<String, dynamic> map) {
     return CaseStudyData(

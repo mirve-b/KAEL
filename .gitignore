@@ -51,3 +51,6 @@ build/
 .idea/
 *.iml
 *.lock
+
+# Environment variables
+.env

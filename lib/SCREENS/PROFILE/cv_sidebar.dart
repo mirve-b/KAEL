@@ -1,14 +1,21 @@
 import 'dart:io';
 import 'dart:ui';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:kael/SCREENS/FORMS/DATA%20MODEL/user_data_model.dart';
+import 'package:kael/SCREENS/GLOBAL%20WIDGETS/kael_theme.dart';
+import 'package:kael/SCREENS/HOME/PROVIDER/project_provider.dart';
+import 'package:provider/provider.dart';
 
 class CVSidebar extends StatelessWidget {
   final UserDataModel user;
   final String activeSection;
   final List<String> sections;
   final Function(String) onSectionClick;
+  final VoidCallback onPreview;
+  final VoidCallback onExport;
+  final bool isExporting;
 
   const CVSidebar({
     super.key,
@@ -16,6 +23,9 @@ class CVSidebar extends StatelessWidget {
     required this.activeSection,
     required this.sections,
     required this.onSectionClick,
+    required this.onPreview,
+    required this.onExport,
+    this.isExporting = false,
   });
 
   // --- LOGIC: PICK IMAGE ---
@@ -115,103 +125,265 @@ class CVSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    bool isHovered = false; 
+    final theme = KaelTheme.of(context.watch<ProjectProvider>().isLightMode);
 
     return Container(
-      width: 200,
+      width: 220,
       decoration: BoxDecoration(
-        color: Colors.black,
+        color: theme.sidebarBackground,
         borderRadius: BorderRadius.circular(25),
-        border: Border.all(color: const Color.fromARGB(255, 79, 78, 78), width: 1.5),
+        border: Border.all(color: theme.sidebarBorder, width: 1.5),
       ),
-      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 16),
       child: Column(
         children: [
-          StatefulBuilder(
-  builder: (context, setInternalState) {
-    return MouseRegion(
-      onEnter: (_) => setInternalState(() => isHovered = true),
-      onExit: (_) => setInternalState(() => isHovered = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: () => _showEditMenu(context),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            // 1. The Image Container with Clipping
-            ClipOval( // This stops the blur from spreading outside
-              child: ImageFiltered(
-                imageFilter: ImageFilter.blur(
-                  sigmaX: isHovered ? 4.0 : 0.0, 
-                  sigmaY: isHovered ? 4.0 : 0.0
-                ),
-                child: CircleAvatar(
-                  radius: 45,
-                  backgroundColor: Colors.black,
-                  backgroundImage: user.finalPfpPath != null 
-                      ? FileImage(File(user.finalPfpPath!)) 
-                      : null,
-                  child: user.finalPfpPath == null 
-                      ? const Icon(Icons.person, size: 40, color: Colors.white10) 
-                      : null,
-                ),
-              ),
-            ),
-            Container(
-              width: 90, 
-              height: 90,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isHovered ? const Color.fromARGB(255, 145, 135, 117) : const Color.fromARGB(0, 255, 255, 255), 
-                  width: 1,
-                ),
-              ),
-            ),
-            if (isHovered)
-              const Icon(Icons.edit_rounded, color: Color.fromARGB(255, 221, 208, 190), size: 22),
-          ],
-        ),
-      ),
-    );
-  },
-),
+          // --- STAR BURST BACK LAYER HEAD ---
+          _AnimatedAvatarHeader(
+            user: user,
+            theme: theme,
+            onTap: () => _showEditMenu(context),
+          ),
+          
           const SizedBox(height: 15),
           Text(
-            user.name.isEmpty ? "User Name" : user.name,
-            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+            user.name.isEmpty ? "User Name" : user.name.toUpperCase(),
+            style: TextStyle(
+              color: theme.textPrimary,
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.5,
+            ),
           ),
           const SizedBox(height: 40),
           Expanded(
             child: ListView(
-              children: sections.map((s) => _sidebarItem(s)).toList(),
+              physics: const NeverScrollableScrollPhysics(), 
+              children: sections.map((s) => _AnimatedSidebarItem(
+                label: s,
+                isSelected: activeSection == s,
+                theme: theme,
+                onTap: () => onSectionClick(s),
+              )).toList(),
             ),
           ),
-          const Divider(color: Colors.white10),
-          _sidebarItem("PREVIEW ATS CV", isAction: true),
-          _sidebarItem("EXPORT", isAction: true),
+          Divider(color: theme.sidebarBorder.withValues(alpha: 0.4), height: 30),
+          _AnimatedSidebarItem(
+            label: "PREVIEW ATS CV",
+            isSelected: false,
+            isAction: true,
+            theme: theme,
+            onTap: onPreview,
+          ),
+          _AnimatedSidebarItem(
+            label: isExporting ? "EXPORTING..." : "EXPORT CV",
+            isSelected: false,
+            isAction: true,
+            theme: theme,
+            onTap: isExporting ? () {} : onExport,
+          ),
         ],
       ),
     );
   }
+}
 
-  Widget _sidebarItem(String label, {bool isAction = false}) {
-    bool isSelected = activeSection == label;
-    return GestureDetector(
-      onTap: () => isAction ? null : onSectionClick(label),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
-        margin: const EdgeInsets.only(bottom: 5),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color.fromARGB(35, 212, 195, 163) : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
+class _AnimatedAvatarHeader extends StatefulWidget {
+  final UserDataModel user;
+  final KaelTheme theme;
+  final VoidCallback onTap;
+
+  const _AnimatedAvatarHeader({required this.user, required this.theme, required this.onTap});
+
+  @override
+  State<_AnimatedAvatarHeader> createState() => _AnimatedAvatarHeaderState();
+}
+
+class _AnimatedAvatarHeaderState extends State<_AnimatedAvatarHeader> with SingleTickerProviderStateMixin {
+  bool _isHovered = false;
+  late AnimationController _starController;
+
+  @override
+  void initState() {
+    super.initState();
+    _starController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    );
+  }
+
+  @override
+  void dispose() {
+    _starController.dispose();
+    super.dispose();
+  }
+
+  void _triggerBurst() {
+    _starController.reset();
+    _starController.forward();
+    widget.onTap();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: _triggerBurst,
+        child: Stack(
+          alignment: Alignment.center,
+          clipBehavior: Clip.none, 
+          children: [
+            
+            // LAYER 1: The Particle System Engine
+            ...List.generate(5, (index) {
+              return AnimatedBuilder(
+                animation: _starController,
+                builder: (context, child) {
+                  if (!_starController.isAnimating && _starController.isDismissed) {
+                    return const SizedBox.shrink();
+                  }
+                  double angle = (index * (2 * math.pi / 5)) - (math.pi / 2);
+
+                  double radiusDistance = 75.0 * _starController.value; 
+
+                  double xOffset = math.cos(angle) * radiusDistance;
+                  double yOffset = math.sin(angle) * radiusDistance;
+                  
+                  double scale = (1.0 - _starController.value);
+
+                  bool isOutline = index == 1 || index == 3;
+
+                  return Positioned(
+                    left: 47 + xOffset - 12, 
+                    top: 47 + yOffset - 12,
+                    child: Transform.scale(
+                      scale: scale,
+                      child: Transform.rotate(
+                        angle: _starController.value * (1.5 * math.pi), 
+                        child: Icon(
+                          isOutline ? Icons.star_border_rounded : Icons.star_rounded, 
+                          color: const Color.fromARGB(255, 241, 119, 157), 
+                          size: 50,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              );
+            }),
+
+            // LAYER 2: The Main Avatar Image
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOutBack,
+              width: _isHovered ? 102 : 94,
+              height: _isHovered ? 102 : 94,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: _isHovered ? widget.theme.hoverBorder : Colors.transparent,
+                  width: 1.5,
+                ),
+              ),
+              child: Center(
+                child: ClipOval(
+                  child: ImageFiltered(
+                    imageFilter: ImageFilter.blur(
+                      sigmaX: _isHovered ? 3.0 : 0.0,
+                      sigmaY: _isHovered ? 3.0 : 0.0,
+                    ),
+                    child: CircleAvatar(
+                      radius: 44,
+                      backgroundColor: Colors.black,
+                      backgroundImage: widget.user.finalPfpPath != null
+                          ? FileImage(File(widget.user.finalPfpPath!))
+                          : null,
+                      child: widget.user.finalPfpPath == null
+                          ? const Icon(Icons.person, size: 40, color: Colors.white10)
+                          : null,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            
+            // LAYER 3: Hover Edit Icon Label
+            if (_isHovered)
+              IgnorePointer(
+                child: Icon(Icons.edit_rounded, color: widget.theme.textMuted, size: 22),
+              ),
+          ],
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? const Color(0xFFD4C3A3) : (isAction ? Colors.white54 : Colors.white24),
-            fontSize: 11,
-            letterSpacing: 1.2,
+      ),
+    );
+  }
+}
+
+class _AnimatedSidebarItem extends StatefulWidget {
+  final String label;
+  final bool isSelected;
+  final bool isAction;
+  final KaelTheme theme;
+  final VoidCallback onTap;
+
+  const _AnimatedSidebarItem({
+    required this.label,
+    required this.isSelected,
+    required this.theme,
+    this.isAction = false,
+    required this.onTap,
+  });
+
+  @override
+  State<_AnimatedSidebarItem> createState() => _AnimatedSidebarItemState();
+}
+
+class _AnimatedSidebarItemState extends State<_AnimatedSidebarItem> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = widget.theme;
+    bool isActive = widget.isSelected || _isHovered;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutBack, 
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: EdgeInsets.symmetric(
+            vertical: _isHovered ? 12 : 10, 
+            horizontal: _isHovered ? 16 : 12,
+          ),
+          decoration: BoxDecoration(
+            color: widget.isSelected
+                ? theme.selectedBackground
+                : (_isHovered ? theme.hoverBackground : Colors.transparent),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: (_isHovered && !widget.isSelected) ? theme.hoverBorder : Colors.transparent,
+              width: 1,
+            ),
+          ),
+          child: AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
+            style: TextStyle(
+              color: widget.isSelected || _isHovered
+                  ? theme.textPrimary
+                  : (widget.isAction ? theme.textSecondary : theme.textDim), 
+              fontSize: _isHovered ? 11.5 : 11, 
+              letterSpacing: 1.5,
+              fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+            ),
+            child: Text(widget.label),
           ),
         ),
       ),
