@@ -154,7 +154,7 @@ class _MiffyLoadingScreenState extends State<MiffyLoadingScreen> with SingleTick
                               : (1.0 - _starDrift.value).clamp(0.0, 1.0),
                           child: Icon(
                             isFilled ? Icons.star_rounded : Icons.star_outline_rounded,
-                            color: const Color(0xFFD4C3A3),
+                            color: const Color(0xFF9A9A9A),
                             size: 26,
                           ),
                         ),
@@ -181,7 +181,7 @@ class _MiffyLoadingScreenState extends State<MiffyLoadingScreen> with SingleTick
                               : (1.0 - _starDrift.value).clamp(0.0, 1.0),
                           child: Icon(
                             isFilled ? Icons.star_rounded : Icons.star_outline_rounded,
-                            color: const Color.fromARGB(160, 212, 195, 163), // Slightly softer alpha tint
+                            color: const Color.fromARGB(160, 154, 154, 154), // Slightly softer alpha tint
                             size: 15, // Dainty/small star sizing
                           ),
                         ),

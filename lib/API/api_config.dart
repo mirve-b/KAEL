@@ -10,4 +10,7 @@ class ApiConfig {
     }
     return key;
   }
+
+  /// Text + vision model for case studies (Gemini free tier on AI Studio).
+  static const String textModel = 'gemini-2.5-flash';
 }

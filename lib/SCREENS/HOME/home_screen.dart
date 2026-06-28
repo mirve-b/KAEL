@@ -34,6 +34,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   late TextEditingController _textController;
   final FocusNode _textFocusNode = FocusNode();
   bool isCatalogExpanded = true;
+  bool _catalogNextHovered = false;
 
   @override
   void initState() {
@@ -88,11 +89,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           controller: controller, 
           autofocus: true, 
           style: const TextStyle(color: Colors.white), 
-          decoration: const InputDecoration(enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFD4C3A3))))
+          decoration: const InputDecoration(enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF9A9A9A))))
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("CANCEL", style: TextStyle(color: Colors.white24))),
-          TextButton(onPressed: () { projects.renameProject(idx, controller.text); Navigator.pop(context); }, child: const Text("SAVE", style: TextStyle(color: Color(0xFFD4C3A3)))),
+          TextButton(onPressed: () { projects.renameProject(idx, controller.text); Navigator.pop(context); }, child: const Text("SAVE", style: TextStyle(color: Color(0xFF9A9A9A)))),
         ],
       ),
     );
@@ -200,7 +201,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   Expanded(
                     child: Column(
                       children: [
-                        KaelTabBar(
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.easeOutCubic,
+                          transform: Matrix4.translationValues(0, _catalogNextHovered ? -6 : 0, 0),
+                          child: KaelTabBar(
                           leadingLabel: derivedLeadingLabel,
                           tabs: derivedTabs,
                           activeTab: derivedActiveTab,
@@ -252,7 +257,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             });
                           },
                         ),
-                        const SizedBox(height: 20),
+                        ),
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.easeOutCubic,
+                          height: _catalogNextHovered ? 26 : 20,
+                        ),
                         Expanded(
                           child: HomeCanvas(
                             selectedSection: currentNavSection, 
@@ -306,6 +316,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                 }
                               });
                             },
+                            onCatalogNextHover: (hovered) {
+                              if (_catalogNextHovered != hovered) {
+                                setState(() => _catalogNextHovered = hovered);
+                              }
+                            },
                           ),
                         ),
                       ],
@@ -328,7 +343,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   decoration: BoxDecoration(
                     color: const Color(0xFF1A1A1A),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFFD4C3A3)),
+                    border: Border.all(color: const Color(0xFF9A9A9A)),
                     boxShadow: [const BoxShadow(color: Colors.black45, blurRadius: 10)],
                   ),
                   child: Text(

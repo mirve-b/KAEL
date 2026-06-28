@@ -74,7 +74,7 @@ class _Form1State extends State<Form1> with TickerProviderStateMixin {
               const Text(
                 "SELECT YOUR COUNTRY",
                 style: TextStyle(
-                  color: Color(0xFFD4C3A3),
+                  color: Color(0xFF9A9A9A),
                   fontSize: 14,
                   letterSpacing: 1.5,
                   fontFamily: 'Serif',
@@ -213,7 +213,7 @@ class _Form1State extends State<Form1> with TickerProviderStateMixin {
                 fontSize: 20,
                 letterSpacing: 1.5,
                 fontFamily: 'Serif',
-                color: Color(0xFFD4C3A3),
+                color: Color(0xFF9A9A9A),
               ),
             ),
           ),
@@ -271,7 +271,7 @@ class _Form1State extends State<Form1> with TickerProviderStateMixin {
                   keyboardType: keyboardType,
                   inputFormatters: inputFormatters,
                   validator: validator,
-                  cursorColor: const Color(0xFFD4C3A3),
+                  cursorColor: const Color(0xFF9A9A9A),
                   style: const TextStyle(color: Color.fromARGB(255, 182, 172, 155), fontSize: 16),
                   decoration: const InputDecoration(
                     isDense: true,
@@ -419,7 +419,7 @@ class _Form1State extends State<Form1> with TickerProviderStateMixin {
               borderRadius: BorderRadius.circular(15),
             ),
           ),
-          child: const Text("Next", style: TextStyle(color: Color.fromARGB(255, 191, 178, 160), letterSpacing: 1.2)),
+          child: const Text("Next", style: TextStyle(color: Color.fromARGB(255, 154, 154, 154), letterSpacing: 1.2)),
         ),
       ),
     );

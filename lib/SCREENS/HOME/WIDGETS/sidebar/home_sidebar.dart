@@ -389,8 +389,10 @@ class _AnimatedHomeCategoryState extends State<_AnimatedHomeCategory> {
                 : (_isHovered ? theme.hoverBackground : Colors.transparent),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: (_isHovered && !widget.isSelected) ? theme.hoverBorder : Colors.transparent,
-              width: 1,
+              color: widget.isSelected
+                  ? theme.selectedBorder
+                  : (_isHovered ? theme.hoverBorder : Colors.transparent),
+              width: widget.isSelected && theme.isLightMode ? 1.5 : 1,
             ),
           ),
           child: Row(
@@ -466,6 +468,12 @@ class _AnimatedProjectItemState extends State<_AnimatedProjectItem> {
                 ? theme.selectedBackground
                 : (_isHovered ? theme.hoverBackground : Colors.transparent),
             borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: widget.isSelected
+                  ? theme.selectedBorder
+                  : (_isHovered ? theme.hoverBorder : Colors.transparent),
+              width: widget.isSelected && theme.isLightMode ? 1.5 : 1,
+            ),
           ),
           child: AnimatedDefaultTextStyle(
             duration: const Duration(milliseconds: 150),

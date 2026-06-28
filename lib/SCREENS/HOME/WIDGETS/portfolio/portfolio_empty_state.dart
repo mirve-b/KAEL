@@ -23,16 +23,16 @@ class PortfolioEmptyState extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
+                Icon(
                   Icons.art_track_rounded,
-                  color: Color.fromARGB(15, 212, 195, 163),
+                  color: const Color(0xFF6E6E6E).withValues(alpha: 0.35),
                   size: 90,
                 ),
                 const SizedBox(height: 25),
                 const Text(
                   "NO PORTFOLIO ACTIVATED",
                   style: TextStyle(
-                    color: Color.fromARGB(80, 158, 143, 103),
+                    color: Color(0xFF9A9A9A),
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 4.0,
@@ -49,13 +49,13 @@ class PortfolioEmptyState extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFD4C3A3),
+                      color: const Color(0xFFB71C1C),
                       borderRadius: BorderRadius.circular(30),
                     ),
                     child: const Text(
                       "GENERATE YOUR PORTFOLIO",
                       style: TextStyle(
-                        color: Colors.black,
+                        color: Colors.white,
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 2.0,

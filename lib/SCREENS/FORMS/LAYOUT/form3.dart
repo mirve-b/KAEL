@@ -73,7 +73,7 @@ class _Form3State extends State<Form3> with TickerProviderStateMixin {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.dark(
-              primary: Color(0xFFD4C3A3),
+              primary: Color(0xFF9A9A9A),
               onPrimary: Colors.black,
               surface: Color.fromARGB(255, 20, 18, 16),
               onSurface: Color.fromARGB(255, 182, 172, 155),
@@ -201,7 +201,7 @@ class _Form3State extends State<Form3> with TickerProviderStateMixin {
             child: const Text(
               "TELL US ABOUT YOUR BACKGROUND.",
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 20, letterSpacing: 1.5, fontFamily: 'Serif', color: Color(0xFFD4C3A3)),
+              style: TextStyle(fontSize: 20, letterSpacing: 1.5, fontFamily: 'Serif', color: Color(0xFF9A9A9A)),
             ),
           ),
         ),
@@ -249,7 +249,7 @@ class _Form3State extends State<Form3> with TickerProviderStateMixin {
                       child: Text(
                         level,
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: isSelected ? Colors.white : const Color.fromARGB(150, 212, 195, 163), fontSize: 14),
+                        style: TextStyle(color: isSelected ? Colors.white : const Color.fromARGB(150, 154, 154, 154), fontSize: 14),
                       ),
                     ),
                   ),
@@ -326,7 +326,7 @@ class _Form3State extends State<Form3> with TickerProviderStateMixin {
                 controller: controller,
                 readOnly: readOnly,
                 onTap: onTap,
-                cursorColor: const Color(0xFFD4C3A3),
+                cursorColor: const Color(0xFF9A9A9A),
                 style: const TextStyle(color: Color.fromARGB(255, 182, 172, 155), fontSize: 16),
                 decoration: const InputDecoration(isDense: true, contentPadding: EdgeInsets.symmetric(vertical: 8), border: InputBorder.none),
               ),
@@ -371,14 +371,14 @@ class _Form3State extends State<Form3> with TickerProviderStateMixin {
                   return TextField(
                     controller: fieldController,
                     focusNode: focusNode,
-                    cursorColor: const Color(0xFFD4C3A3),
+                    cursorColor: const Color(0xFF9A9A9A),
                     style: const TextStyle(color: Color.fromARGB(255, 182, 172, 155), fontSize: 16),
                     decoration: const InputDecoration(
                       isDense: true, 
                       contentPadding: EdgeInsets.symmetric(vertical: 8), 
                       border: InputBorder.none,
                       hintText: "TYPE OR CHOOSE A LANGUAGE",
-                      hintStyle: TextStyle(color: Color.fromARGB(60, 212, 195, 163), fontSize: 14),
+                      hintStyle: TextStyle(color: Color.fromARGB(60, 154, 154, 154), fontSize: 14),
                     ),
                   );
                 },
@@ -446,9 +446,9 @@ class _Form3State extends State<Form3> with TickerProviderStateMixin {
             decoration: BoxDecoration(
               color: const Color.fromARGB(44, 128, 119, 106),
               shape: BoxShape.circle,
-              border: Border.all(color: const Color.fromARGB(80, 212, 195, 163), width: 0.5),
+              border: Border.all(color: const Color.fromARGB(80, 154, 154, 154), width: 0.5),
             ),
-            child: const Icon(Icons.add_rounded, color: Color(0xFFD4C3A3), size: 20),
+            child: const Icon(Icons.add_rounded, color: Color(0xFF9A9A9A), size: 20),
           ),
         ),
       ),

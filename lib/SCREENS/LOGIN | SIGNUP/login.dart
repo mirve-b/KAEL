@@ -61,7 +61,7 @@ class _LoginState extends State<Login> {
                 child: IconButton(
                   icon: const Icon(
                     Icons.arrow_back_ios_new_rounded,
-                    color: Color(0xFFD4C3A3),
+                    color: Color(0xFF9A9A9A),
                     size: 20,
                   ),
                   onPressed: () => Navigator.pop(context),

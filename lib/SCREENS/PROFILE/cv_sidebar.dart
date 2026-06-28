@@ -114,7 +114,7 @@ class CVSidebar extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(icon, size: 16, color: isDelete ? Colors.redAccent : const Color(0xFFD4C3A3)),
+            Icon(icon, size: 16, color: isDelete ? Colors.redAccent : const Color(0xFF9A9A9A)),
             const SizedBox(width: 12),
             Text(label, style: TextStyle(color: isDelete ? Colors.redAccent : Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)),
           ],

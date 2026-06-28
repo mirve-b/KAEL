@@ -1,32 +1,51 @@
 import 'package:flutter/material.dart';
+import 'package:kael/SCREENS/GLOBAL%20WIDGETS/kael_theme.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-class CvTheme {
-  static const textColor = Color.fromARGB(255, 171, 163, 153);
-  static const cardColor = Colors.black;
-  static const borderColor = Color.fromARGB(40, 171, 163, 153);
+class CvThemeScope extends InheritedWidget {
+  final CvTheme theme;
 
-  static TextStyle heading({double size = 14}) => TextStyle(
+  const CvThemeScope({super.key, required this.theme, required super.child});
+
+  static CvTheme of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<CvThemeScope>()!.theme;
+
+  @override
+  bool updateShouldNotify(CvThemeScope oldWidget) => theme.kael.isLightMode != oldWidget.theme.kael.isLightMode;
+}
+
+class CvTheme {
+  final KaelTheme kael;
+
+  const CvTheme(this.kael);
+
+  Color get textColor => kael.cvText;
+
+  Color get cardColor => kael.cvCardBackground;
+
+  Color get borderColor => kael.cvCardBorder;
+
+  TextStyle heading({double size = 14}) => TextStyle(
         color: textColor,
         fontSize: size,
         letterSpacing: 1.2,
         fontVariations: const [FontVariation('wght', 400.0)],
       );
 
-  static TextStyle body({double size = 14}) => TextStyle(
+  TextStyle body({double size = 14}) => TextStyle(
         color: textColor,
         fontSize: size,
         fontVariations: const [FontVariation('wght', 300.0)],
       );
 
-  static InputDecoration fieldDecoration(String label) => InputDecoration(
+  InputDecoration fieldDecoration(String label) => InputDecoration(
         labelText: label,
-        labelStyle: body(size: 12).copyWith(color: textColor.withValues(alpha: 0.6)),
+        labelStyle: body(size: 12).copyWith(color: textColor.withValues(alpha: 0.65)),
         enabledBorder: UnderlineInputBorder(
-          borderSide: BorderSide(color: textColor.withValues(alpha: 0.25)),
+          borderSide: BorderSide(color: kael.cvFieldBorder),
         ),
-        focusedBorder: const UnderlineInputBorder(
-          borderSide: BorderSide(color: textColor),
+        focusedBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: textColor.withValues(alpha: 0.85)),
         ),
         isDense: true,
       );
@@ -46,6 +65,8 @@ class CvSectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cv = CvThemeScope.of(context);
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -53,19 +74,19 @@ class CvSectionHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: CvTheme.heading(size: 16)),
+              Text(title, style: cv.heading(size: 16)),
               const SizedBox(height: 4),
-              Text(subtitle, style: CvTheme.body(size: 12).copyWith(color: CvTheme.textColor.withValues(alpha: 0.6))),
+              Text(subtitle, style: cv.body(size: 12).copyWith(color: cv.textColor.withValues(alpha: 0.6))),
             ],
           ),
         ),
         if (onAdd != null)
           TextButton.icon(
             onPressed: onAdd,
-            icon: const Icon(Symbols.add, size: 16, color: CvTheme.textColor),
-            label: Text('ADD', style: CvTheme.body(size: 11).copyWith(letterSpacing: 1.2)),
+            icon: Icon(Symbols.add, size: 16, color: cv.textColor),
+            label: Text('ADD', style: cv.body(size: 11).copyWith(letterSpacing: 1.2)),
             style: TextButton.styleFrom(
-              side: BorderSide(color: CvTheme.textColor.withValues(alpha: 0.35)),
+              side: BorderSide(color: cv.textColor.withValues(alpha: 0.35)),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             ),
           ),
@@ -88,14 +109,16 @@ class CvEntryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cv = CvThemeScope.of(context);
+
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(top: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: CvTheme.cardColor,
+        color: cv.cardColor,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: CvTheme.borderColor),
+        border: Border.all(color: cv.borderColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -103,7 +126,7 @@ class CvEntryCard extends StatelessWidget {
           Row(
             children: [
               if (label != null)
-                Expanded(child: Text(label!, style: CvTheme.body(size: 11).copyWith(letterSpacing: 1.1))),
+                Expanded(child: Text(label!, style: cv.body(size: 11).copyWith(letterSpacing: 1.1))),
               IconButton(
                 onPressed: onRemove,
                 icon: const Icon(Symbols.delete_outline, size: 18, color: Colors.redAccent),
@@ -126,19 +149,21 @@ class CvEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cv = CvThemeScope.of(context);
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(message, style: CvTheme.body(size: 13).copyWith(color: CvTheme.textColor.withValues(alpha: 0.45))),
+          Text(message, style: cv.body(size: 13).copyWith(color: cv.textColor.withValues(alpha: 0.45))),
           const SizedBox(height: 16),
           TextButton(
             onPressed: onAdd,
             style: TextButton.styleFrom(
-              side: BorderSide(color: CvTheme.textColor.withValues(alpha: 0.35)),
+              side: BorderSide(color: cv.textColor.withValues(alpha: 0.35)),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
-            child: Text('ADD FIRST ENTRY', style: CvTheme.body(size: 11).copyWith(letterSpacing: 1.2)),
+            child: Text('ADD FIRST ENTRY', style: cv.body(size: 11).copyWith(letterSpacing: 1.2)),
           ),
         ],
       ),
@@ -185,10 +210,12 @@ class _CvChipFieldState extends State<CvChipField> {
 
   @override
   Widget build(BuildContext context) {
+    final cv = CvThemeScope.of(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(widget.label, style: CvTheme.body(size: 12).copyWith(color: CvTheme.textColor.withValues(alpha: 0.7))),
+        Text(widget.label, style: cv.body(size: 12).copyWith(color: cv.textColor.withValues(alpha: 0.7))),
         const SizedBox(height: 10),
         Wrap(
           spacing: 8,
@@ -196,10 +223,10 @@ class _CvChipFieldState extends State<CvChipField> {
           children: [
             ...widget.items.asMap().entries.map(
               (entry) => Chip(
-                label: Text(entry.value, style: CvTheme.body(size: 12)),
+                label: Text(entry.value, style: cv.body(size: 12)),
                 deleteIcon: const Icon(Symbols.close, size: 14),
                 onDeleted: () => _removeItem(entry.key),
-                backgroundColor: const Color.fromARGB(40, 171, 163, 153),
+                backgroundColor: cv.textColor.withValues(alpha: 0.12),
                 side: BorderSide.none,
               ),
             ),
@@ -211,15 +238,15 @@ class _CvChipFieldState extends State<CvChipField> {
             Expanded(
               child: TextField(
                 controller: _controller,
-                style: CvTheme.body(size: 13),
-                decoration: CvTheme.fieldDecoration('Type and press Add'),
+                style: cv.body(size: 13),
+                decoration: cv.fieldDecoration('Type and press Add'),
                 onSubmitted: (_) => _addItem(),
               ),
             ),
             const SizedBox(width: 10),
             TextButton(
               onPressed: _addItem,
-              child: Text('ADD', style: CvTheme.body(size: 11)),
+              child: Text('ADD', style: cv.body(size: 11)),
             ),
           ],
         ),

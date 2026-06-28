@@ -148,7 +148,7 @@ class _Form2State extends State<Form2> with TickerProviderStateMixin {
             fontSize: 20,
             letterSpacing: 1.5,
             fontFamily: 'Serif',
-            color: Color(0xFFD4C3A3),
+            color: Color(0xFF9A9A9A),
           ),
         ),
       ),
@@ -198,7 +198,7 @@ class _Form2State extends State<Form2> with TickerProviderStateMixin {
               child: const Text(
                 "ADD",
                 style: TextStyle(
-                  color: Color(0xFFD4C3A3),
+                  color: Color(0xFF9A9A9A),
                   letterSpacing: 2,
                   fontSize: 12,
                   fontWeight: FontWeight.bold,

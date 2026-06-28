@@ -65,6 +65,13 @@ class UserDataModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updatePortfolioIdentity({String? name, String? title, String? bio}) {
+    if (name != null) this.name = name;
+    if (title != null) this.title = title;
+    if (bio != null) this.bio = bio;
+    notifyListeners();
+  }
+
   void signupUser({required String full, required String mail}) {
     fullName = full;
     email = mail;
@@ -290,5 +297,38 @@ class UserDataModel extends ChangeNotifier {
   void setLanguagesList(List<String> items) {
     languages = items;
     notifyListeners();
+  }
+
+  /// Profile snapshot sent to the case study engine for field-aware generation.
+  String buildCreativeContextSummary() {
+    final buffer = StringBuffer();
+    if (name.isNotEmpty) buffer.writeln('Name: $name');
+    if (title.isNotEmpty) buffer.writeln('Professional title: $title');
+    if (bio.isNotEmpty) buffer.writeln('Bio: $bio');
+    if (fieldOfStudy.isNotEmpty) buffer.writeln('Field of study: $fieldOfStudy');
+    if (educationLevel != null && educationLevel!.isNotEmpty) {
+      buffer.writeln('Education level: $educationLevel');
+    }
+    if (institution.isNotEmpty) buffer.writeln('Institution: $institution');
+    if (skills.isNotEmpty) buffer.writeln('Skills: ${skills.join(', ')}');
+    if (interests.isNotEmpty) buffer.writeln('Interests: ${interests.join(', ')}');
+    if (hobbies.isNotEmpty) buffer.writeln('Hobbies: $hobbies');
+    if (experiences.isNotEmpty) {
+      buffer.writeln('Experience:');
+      for (final e in experiences) {
+        if (e.jobTitle.isEmpty && e.description.isEmpty) continue;
+        buffer.writeln('- ${e.jobTitle}${e.company.isNotEmpty ? ' at ${e.company}' : ''}: ${e.description}');
+      }
+    }
+    if (cvProjects.isNotEmpty) {
+      buffer.writeln('Past projects:');
+      for (final p in cvProjects) {
+        if (p.name.isEmpty && p.description.isEmpty) continue;
+        buffer.writeln('- ${p.name}${p.role.isNotEmpty ? ' (${p.role})' : ''}: ${p.description}');
+      }
+    }
+    return buffer.toString().trim().isEmpty
+        ? 'No profile details added yet — infer discipline from project content only.'
+        : buffer.toString().trim();
   }
 }

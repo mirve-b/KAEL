@@ -53,6 +53,8 @@ class ProjectPage {
   List<ProjectCell> cells;
   CaseStudyData? caseStudy;
   bool isSaved;
+  /// Optional portfolio grid thumbnail override (local file path).
+  String? portfolioThumbnailPath;
 
   ProjectPage({
     required this.id,
@@ -60,6 +62,7 @@ class ProjectPage {
     required this.cells,
     this.caseStudy,
     this.isSaved = false,
+    this.portfolioThumbnailPath,
   });
 
   List<String> get allImagePaths {
@@ -70,12 +73,22 @@ class ProjectPage {
         .toList();
   }
 
+  /// Thumbnail shown on the portfolio project grid.
+  String? get portfolioThumbnail {
+    if (portfolioThumbnailPath != null && portfolioThumbnailPath!.isNotEmpty) {
+      return portfolioThumbnailPath;
+    }
+    final images = allImagePaths;
+    return images.isNotEmpty ? images.first : null;
+  }
+
   Map<String, dynamic> toMap() => {
         'id': id,
         'title': title,
         'cells': cells.map((c) => c.toMap()).toList(),
         'isSaved': isSaved,
         'caseStudy': caseStudy?.toMap(),
+        'portfolioThumbnailPath': portfolioThumbnailPath,
       };
 
   factory ProjectPage.fromMap(Map<String, dynamic> map) {
@@ -87,6 +100,7 @@ class ProjectPage {
           .toList(),
       isSaved: map['isSaved'] ?? false,
       caseStudy: map['caseStudy'] != null ? CaseStudyData.fromMap(map['caseStudy']) : null,
+      portfolioThumbnailPath: map['portfolioThumbnailPath'],
     );
   }
 }

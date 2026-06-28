@@ -1,23 +1,31 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:kael/SCREENS/GLOBAL%20WIDGETS/kael_theme.dart';
 import 'package:kael/SCREENS/HOME/DATA%20MODEL/project_model.dart';
 
 class CaseStudyView extends StatelessWidget {
   final ProjectPage project;
   final VoidCallback onBackToEdit;
   final VoidCallback onDonePressed;
+  final KaelTheme? theme;
+  final bool glassMode;
 
   const CaseStudyView({
     super.key,
     required this.project,
     required this.onBackToEdit,
     required this.onDonePressed,
+    this.theme,
+    this.glassMode = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final imagePaths = project.allImagePaths;
+    final t = theme ?? KaelTheme.of(false);
+    final headingColor = t.textPrimary;
+    final mutedColor = t.textMuted;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -29,13 +37,13 @@ class CaseStudyView extends StatelessWidget {
               GestureDetector(
                 onTap: onBackToEdit,
                 child: Row(
-                  children: const [
-                    Icon(Icons.arrow_back_ios, color: Colors.white24, size: 14),
-                    SizedBox(width: 8),
+                  children: [
+                    Icon(Icons.arrow_back_ios, color: mutedColor, size: 14),
+                    const SizedBox(width: 8),
                     Text(
                       'EDIT WORKSPACE',
                       style: TextStyle(
-                        color: Color.fromARGB(120, 255, 255, 255),
+                        color: mutedColor,
                         fontSize: 10,
                         letterSpacing: 1.2,
                         fontWeight: FontWeight.bold,
@@ -52,14 +60,14 @@ class CaseStudyView extends StatelessWidget {
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 decoration: BoxDecoration(
-                  color: project.isSaved ? Colors.transparent : Colors.red.shade900,
+                  color: project.isSaved ? Colors.transparent : t.accentRed,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.red.shade900),
+                  border: Border.all(color: t.accentRed),
                 ),
                 child: Text(
-                  project.isSaved ? 'ENTER EDIT MODE' : 'DONE & SAVE',
+                  project.isSaved ? 'BACK TO PORTFOLIO' : 'DONE & SAVE',
                   style: TextStyle(
-                    color: project.isSaved ? Colors.red.shade200 : Colors.white,
+                    color: project.isSaved ? t.accentRed : Colors.white,
                     fontSize: 10,
                     letterSpacing: 1.2,
                     fontWeight: FontWeight.bold,
@@ -72,8 +80,8 @@ class CaseStudyView extends StatelessWidget {
         const SizedBox(height: 30),
         Text(
           project.title.toUpperCase(),
-          style: const TextStyle(
-            color: Color(0xFFFDF9ED),
+          style: TextStyle(
+            color: headingColor,
             fontSize: 32,
             fontWeight: FontWeight.bold,
             letterSpacing: 2.0,
@@ -86,16 +94,18 @@ class CaseStudyView extends StatelessWidget {
             children: [
               if (project.caseStudy == null)
                 _buildSection(
+                  t,
                   'NOTICE',
                   'No case study generated yet. Go back and click NEXT to let the AI curate your work.',
                 )
               else ...[
                 if (project.caseStudy!.overview.isNotEmpty)
-                  _buildSection('OVERVIEW', project.caseStudy!.overview),
-                _buildSection('PROBLEM', project.caseStudy!.problem),
-                _buildSection('OBJECTIVES', project.caseStudy!.objectives),
-                _buildSection('METHODOLOGY', project.caseStudy!.methodology),
+                  _buildSection(t, 'OVERVIEW', project.caseStudy!.overview),
+                _buildSection(t, 'PROBLEM', project.caseStudy!.problem),
+                _buildSection(t, 'OBJECTIVES', project.caseStudy!.objectives),
+                _buildSection(t, 'METHODOLOGY', project.caseStudy!.methodology),
                 _buildSection(
+                  t,
                   'DESIGN DECISIONS',
                   project.caseStudy!.designDecisions,
                   trailingVisualGrid: imagePaths.isNotEmpty
@@ -105,8 +115,8 @@ class CaseStudyView extends StatelessWidget {
                         )
                       : null,
                 ),
-                _buildSection('SOLUTION', project.caseStudy!.solution),
-                _buildSection('RESULTS', project.caseStudy!.results),
+                _buildSection(t, 'SOLUTION', project.caseStudy!.solution),
+                _buildSection(t, 'RESULTS', project.caseStudy!.results),
               ],
               const SizedBox(height: 100),
             ],
@@ -132,6 +142,8 @@ class CaseStudyView extends StatelessWidget {
         child: Image.file(
           File(paths[idx]),
           fit: BoxFit.cover,
+          cacheWidth: 480,
+          filterQuality: FilterQuality.medium,
           errorBuilder: (_, __, ___) => Container(
             color: Colors.white10,
             child: const Icon(Icons.broken_image, color: Colors.white24),
@@ -141,15 +153,26 @@ class CaseStudyView extends StatelessWidget {
     );
   }
 
-  Widget _buildSection(String title, String markdownContent, {Widget? trailingVisualGrid}) {
+  Widget _buildSection(KaelTheme t, String title, String markdownContent, {Widget? trailingVisualGrid}) {
+    final headingColor = t.textPrimary;
+    final bodyColor = t.textSecondary;
+
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 24),
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: const Color(0xFF0A0A0A),
+        color: glassMode
+            ? t.panelBackgroundAlt.withValues(alpha: t.isLightMode ? 0.5 : 0.35)
+            : (t.isLightMode
+                ? Colors.white.withValues(alpha: 0.55)
+                : const Color(0xFF0A0A0A)),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color.fromARGB(24, 255, 255, 255)),
+        border: Border.all(
+          color: glassMode
+              ? t.sidebarBorder.withValues(alpha: 0.35)
+              : (t.isLightMode ? t.sidebarBorder.withValues(alpha: 0.4) : const Color.fromARGB(24, 255, 255, 255)),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -157,7 +180,7 @@ class CaseStudyView extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-              color: Colors.red.shade300,
+              color: headingColor,
               fontSize: 13,
               fontWeight: FontWeight.bold,
               letterSpacing: 1.8,
@@ -167,22 +190,22 @@ class CaseStudyView extends StatelessWidget {
           MarkdownBody(
             data: markdownContent,
             styleSheet: MarkdownStyleSheet(
-              p: const TextStyle(
-                color: Color.fromARGB(220, 255, 255, 255),
+              p: TextStyle(
+                color: bodyColor,
                 fontSize: 14,
                 height: 1.7,
                 fontFamily: 'Inter',
               ),
-              strong: const TextStyle(
-                color: Colors.white,
+              strong: TextStyle(
+                color: t.textPrimary,
                 fontWeight: FontWeight.bold,
               ),
               em: TextStyle(
-                color: Colors.white.withValues(alpha: 0.9),
+                color: bodyColor.withValues(alpha: 0.9),
                 fontStyle: FontStyle.italic,
               ),
               listBullet: TextStyle(
-                color: Colors.white.withValues(alpha: 0.85),
+                color: bodyColor.withValues(alpha: 0.85),
                 fontSize: 14,
               ),
               blockSpacing: 14,

@@ -62,7 +62,7 @@ class _SignupState extends State<Signup> {
                 scale: _isBackHovered ? 1.1 : 1.0,
                 duration: const Duration(milliseconds: 150),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFFD4C3A3), size: 20),
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF9A9A9A), size: 20),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),

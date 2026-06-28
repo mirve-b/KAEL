@@ -9,6 +9,7 @@ import 'package:kael/SCREENS/GLOBAL%20WIDGETS/kael_theme.dart';
 import 'package:kael/SCREENS/HOME/PROVIDER/project_provider.dart';
 import 'package:kael/SCREENS/PROFILE/SERVICES/cv_pdf_service.dart';
 import 'package:kael/SCREENS/PROFILE/WIDGETS/cv_sections.dart';
+import 'package:kael/SCREENS/PROFILE/WIDGETS/cv_ui_helpers.dart';
 import 'package:kael/SCREENS/PROFILE/cv_sidebar.dart';
 import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
@@ -192,16 +193,19 @@ class _PfpCVState extends State<PfpCV> {
           ? Center(
               child: Text(
                 'Open a section from the sidebar',
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.25), letterSpacing: 1.2),
+                style: TextStyle(color: theme.textMuted, letterSpacing: 1.2),
               ),
             )
-          : SingleChildScrollView(
-              child: _buildSectionContent(user),
+          : CvThemeScope(
+              theme: CvTheme(theme),
+              child: SingleChildScrollView(
+                child: _buildSectionContent(user, theme),
+              ),
             ),
     );
   }
 
-  Widget _buildSectionContent(UserDataModel user) {
+  Widget _buildSectionContent(UserDataModel user, KaelTheme theme) {
     switch (activeSection) {
       case 'PROFILE':
         return CvProfileSection(user: user);
@@ -219,7 +223,7 @@ class _PfpCVState extends State<PfpCV> {
         return Center(
           child: Text(
             '$activeSection SECTION',
-            style: const TextStyle(color: Colors.white24),
+            style: TextStyle(color: theme.textMuted),
           ),
         );
     }

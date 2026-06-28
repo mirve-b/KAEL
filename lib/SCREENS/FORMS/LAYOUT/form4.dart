@@ -142,7 +142,7 @@ class _Form4State extends State<Form4> with TickerProviderStateMixin {
             widthFactor: animation.value,
             child: const Text("LET’S HIGHLIGHT WHAT YOU’RE GREAT AT!",
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 20, letterSpacing: 1.5, fontFamily: 'Serif', color: Color(0xFFD4C3A3)),
+              style: TextStyle(fontSize: 20, letterSpacing: 1.5, fontFamily: 'Serif', color: Color(0xFF9A9A9A)),
             ),
           ),
         ),
@@ -188,7 +188,7 @@ class _Form4State extends State<Form4> with TickerProviderStateMixin {
                       ),
                       child: Text(interest,
                         style: TextStyle(
-                          color: isSelected ? Colors.white : const Color.fromARGB(150, 212, 195, 163),
+                          color: isSelected ? Colors.white : const Color.fromARGB(150, 154, 154, 154),
                           fontSize: 12,
                         ),
                       ),
@@ -256,7 +256,7 @@ class _Form4State extends State<Form4> with TickerProviderStateMixin {
               opacity: animation.value,
               child: TextField(
                 controller: controller,
-                cursorColor: const Color(0xFFD4C3A3),
+                cursorColor: const Color(0xFF9A9A9A),
                 style: const TextStyle(color: Color.fromARGB(255, 182, 172, 155), fontSize: 16),
                 decoration: const InputDecoration(isDense: true, contentPadding: EdgeInsets.symmetric(vertical: 8), border: InputBorder.none),
               ),
@@ -287,9 +287,9 @@ class _Form4State extends State<Form4> with TickerProviderStateMixin {
             decoration: BoxDecoration(
               color: const Color.fromARGB(44, 128, 119, 106),
               shape: BoxShape.circle,
-              border: Border.all(color: const Color.fromARGB(80, 212, 195, 163), width: 0.5),
+              border: Border.all(color: const Color.fromARGB(80, 154, 154, 154), width: 0.5),
             ),
-            child: const Icon(Icons.add_rounded, color: Color(0xFFD4C3A3), size: 20),
+            child: const Icon(Icons.add_rounded, color: Color(0xFF9A9A9A), size: 20),
           ),
         ),
       ),

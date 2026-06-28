@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:kael/API/gemini_service.dart';
+import 'package:kael/SCREENS/FORMS/DATA%20MODEL/user_data_model.dart';
 import 'package:kael/SCREENS/HOME/DATA%20MODEL/project_model.dart';
 
 class ProjectProvider extends ChangeNotifier {
@@ -185,25 +186,31 @@ class ProjectProvider extends ChangeNotifier {
   // --- GENERATION ENGINE LAYER ---
   bool _isGenerating = false;
   bool get isGenerating => _isGenerating;
-  Future<void> generateAIContent() async {
+  String? lastGenerationError;
+
+  Future<bool> generateAIContent(UserDataModel user) async {
+    lastGenerationError = null;
     _isGenerating = true;
     notifyListeners();
 
     try {
-      // 1. DYNAMIC INDETERMINATE LOADING STATE
       currentProject.caseStudy = CaseStudyData(
-        problem: "Analyzing architectural constraints...",
-        objectives: "Defining project milestones...",
-        methodology: "Synthesizing process cycles...",
-        designDecisions: "Reviewing spatial layout configurations...",
-        solution: "Curation in progress...",
-        results: "Optimizing presentation blocks...",
+        problem: "Detecting creative field...",
+        objectives: "Loading discipline profile...",
+        methodology: "Mapping research -> ideation -> creation...",
+        designDecisions: "Analyzing project visuals and notes...",
+        solution: "Generating specialized sections...",
+        results: "Applying Kael writing style...",
       );
       notifyListeners();
 
-      // 2. DISPATCH ASYMMETRIC API REQUEST
-      final String aiResult = await _geminiService.getCaseStudy(currentProject.cells);
+      await Future<void>.delayed(Duration.zero);
 
+      final String aiResult = await _geminiService.getCaseStudy(
+        user: user,
+        projectTitle: currentProject.title,
+        cells: currentProject.cells,
+      );
       final sections = _geminiService.parseCaseStudySections(aiResult);
 
       currentProject.caseStudy = CaseStudyData(
@@ -215,16 +222,32 @@ class ProjectProvider extends ChangeNotifier {
         solution: sections['SOLUTION'] ?? '',
         results: sections['RESULTS'] ?? '',
       );
-
+      return true;
     } catch (e) {
-      print("DEBUG CRITICAL API ERROR: $e");
-      currentProject.caseStudy = CaseStudyData(
-        solution: "Failed to construct architectural payload views. Details: $e",
-      );
+      lastGenerationError = _friendlyGenerationError(e);
+      currentProject.caseStudy = null;
+      return false;
+    } finally {
+      _isGenerating = false;
+      notifyListeners();
     }
+  }
 
-    _isGenerating = false;
-    notifyListeners();
+  String _friendlyGenerationError(Object error) {
+    final msg = error.toString().toLowerCase();
+    if (msg.contains('503') || msg.contains('unavailable') || msg.contains('high demand')) {
+      return '**Gemini is temporarily overloaded (503).** This is a Google server-side spike — you do **not** need a new API key. Wait a minute and click **NEXT** again. The app will auto-retry with fallback models.';
+    }
+    if (msg.contains('429') || msg.contains('resource exhausted')) {
+      return '**Rate limit reached.** Wait a few minutes before retrying. Free-tier quotas reset over time — a new API key will not help if the quota is account-wide.';
+    }
+    if (msg.contains('timeout') || msg.contains('timed out')) {
+      return '**Generation timed out.** Gemini took too long to respond — try again with fewer/lighter images or wait a minute.';
+    }
+    if (msg.contains('api key') || msg.contains('permission') || msg.contains('401')) {
+      return '**API key issue.** Check that `GEMINI_API_KEY` in your `.env` file is valid and has Generative Language API access enabled.';
+    }
+    return '**Generation failed:** ${error.toString()}';
   }
 
 bool _isLightMode = false;
@@ -239,4 +262,50 @@ bool _isLightMode = false;
   }
 
   void toggleBackgroundTheme() => toggleLightMode();
+
+  // --- Portfolio display order ---
+  final List<String> _portfolioOrder = [];
+
+  List<ProjectPage> get savedProjectsForPortfolio {
+    final saved = _projects.where((p) => p.isSaved).toList();
+    if (_portfolioOrder.isEmpty) return saved;
+
+    final byId = {for (final p in saved) p.id: p};
+    final ordered = <ProjectPage>[];
+    for (final id in _portfolioOrder) {
+      final project = byId.remove(id);
+      if (project != null) ordered.add(project);
+    }
+    ordered.addAll(byId.values);
+    return ordered;
+  }
+
+  void reorderPortfolioProjects(int oldIndex, int newIndex) {
+    final saved = savedProjectsForPortfolio;
+    if (oldIndex < 0 || oldIndex >= saved.length) return;
+    if (newIndex < 0 || newIndex > saved.length) return;
+
+    if (oldIndex < newIndex) newIndex -= 1;
+    final item = saved.removeAt(oldIndex);
+    saved.insert(newIndex, item);
+
+    _portfolioOrder
+      ..clear()
+      ..addAll(saved.map((p) => p.id));
+    notifyListeners();
+  }
+
+  void setProjectPortfolioThumbnail(String projectId, String? path) {
+    final idx = _projects.indexWhere((p) => p.id == projectId);
+    if (idx == -1) return;
+    _projects[idx].portfolioThumbnailPath = path;
+    notifyListeners();
+  }
+
+  Future<void> pickProjectPortfolioThumbnail(String projectId) async {
+    final result = await FilePicker.platform.pickFiles(type: FileType.image);
+    if (result != null && result.files.single.path != null) {
+      setProjectPortfolioThumbnail(projectId, result.files.single.path);
+    }
+  }
 }

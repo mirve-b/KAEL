@@ -1,17 +1,29 @@
 import 'dart:typed_data';
 
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:kael/SCREENS/FORMS/DATA%20MODEL/user_data_model.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 class CvPdfService {
+  static pw.Font? _regularFont;
+  static pw.Font? _boldFont;
+
+  static Future<void> _ensureFonts() async {
+    if (_regularFont != null) return;
+    final data = await rootBundle.load('assets/fonts/Inter-VariableFont_opsz,wght.ttf');
+    _regularFont = pw.Font.ttf(data);
+    _boldFont = _regularFont;
+  }
+
   static Future<Uint8List> generate(UserDataModel user) async {
     user.ensureEducationSeeded();
+    await _ensureFonts();
+
+    final baseFont = _regularFont!;
+    final boldFont = _boldFont!;
 
     final doc = pw.Document();
-    final baseFont = pw.Font.helvetica();
-    final boldFont = pw.Font.helveticaBold();
-
     doc.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
@@ -21,7 +33,10 @@ class CvPdfService {
           pw.SizedBox(height: 16),
           if (user.bio.trim().isNotEmpty) ...[
             _sectionTitle('PROFESSIONAL SUMMARY', boldFont),
-            pw.Text(user.bio.trim(), style: pw.TextStyle(font: baseFont, fontSize: 10, lineSpacing: 1.4)),
+            pw.Text(
+              _pdfText(user.bio.trim()),
+              style: pw.TextStyle(font: baseFont, fontSize: 10, lineSpacing: 1.4),
+            ),
             pw.SizedBox(height: 12),
           ],
           if (user.experiences.any((e) => e.jobTitle.isNotEmpty || e.company.isNotEmpty)) ...[
@@ -41,7 +56,7 @@ class CvPdfService {
           if (user.skills.isNotEmpty) ...[
             _sectionTitle('SKILLS', boldFont),
             pw.Text(
-              user.skills.where((s) => s.trim().isNotEmpty).join(' • '),
+              _pdfText(user.skills.where((s) => s.trim().isNotEmpty).join('  |  ')),
               style: pw.TextStyle(font: baseFont, fontSize: 10, lineSpacing: 1.3),
             ),
             pw.SizedBox(height: 12),
@@ -63,7 +78,7 @@ class CvPdfService {
             pw.SizedBox(height: 8),
             _sectionTitle('LANGUAGES', boldFont),
             pw.Text(
-              user.languages.join(' • '),
+              _pdfText(user.languages.join('  |  ')),
               style: pw.TextStyle(font: baseFont, fontSize: 10),
             ),
           ],
@@ -72,6 +87,17 @@ class CvPdfService {
     );
 
     return doc.save();
+  }
+
+  static String _pdfText(String value) {
+    return value
+        .replaceAll('\u2019', "'")
+        .replaceAll('\u2018', "'")
+        .replaceAll('\u201C', '"')
+        .replaceAll('\u201D', '"')
+        .replaceAll('\u2022', '|')
+        .replaceAll('\u2013', '-')
+        .replaceAll('\u2014', '-');
   }
 
   static pw.Widget _buildHeader(UserDataModel user, pw.Font bold, pw.Font regular) {
@@ -87,14 +113,14 @@ class CvPdfService {
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
         pw.Text(
-          user.name.isNotEmpty ? user.name.toUpperCase() : 'YOUR NAME',
+          user.name.isNotEmpty ? _pdfText(user.name.toUpperCase()) : 'YOUR NAME',
           style: pw.TextStyle(font: bold, fontSize: 20, letterSpacing: 0.5),
         ),
         if (user.title.isNotEmpty)
           pw.Padding(
             padding: const pw.EdgeInsets.only(top: 4),
             child: pw.Text(
-              user.title,
+              _pdfText(user.title),
               style: pw.TextStyle(font: regular, fontSize: 11),
             ),
           ),
@@ -102,7 +128,7 @@ class CvPdfService {
           pw.Padding(
             padding: const pw.EdgeInsets.only(top: 6),
             child: pw.Text(
-              contactParts.join('  |  '),
+              _pdfText(contactParts.join('  |  ')),
               style: pw.TextStyle(font: regular, fontSize: 9),
             ),
           ),
@@ -142,21 +168,21 @@ class CvPdfService {
             children: [
               pw.Expanded(
                 child: pw.Text(
-                  '${e.jobTitle}${e.company.isNotEmpty ? ' — ${e.company}' : ''}',
+                  _pdfText('${e.jobTitle}${e.company.isNotEmpty ? ' — ${e.company}' : ''}'),
                   style: pw.TextStyle(font: bold, fontSize: 10),
                 ),
               ),
               if (e.dateRange.isNotEmpty)
-                pw.Text(e.dateRange, style: pw.TextStyle(font: regular, fontSize: 9)),
+                pw.Text(_pdfText(e.dateRange), style: pw.TextStyle(font: regular, fontSize: 9)),
             ],
           ),
           if (e.location.isNotEmpty)
-            pw.Text(e.location, style: pw.TextStyle(font: regular, fontSize: 9, color: PdfColors.grey700)),
+            pw.Text(_pdfText(e.location), style: pw.TextStyle(font: regular, fontSize: 9, color: PdfColors.grey700)),
           if (e.description.trim().isNotEmpty)
             pw.Padding(
               padding: const pw.EdgeInsets.only(top: 4),
               child: pw.Text(
-                e.description.trim(),
+                _pdfText(e.description.trim()),
                 style: pw.TextStyle(font: regular, fontSize: 9, lineSpacing: 1.35),
               ),
             ),
@@ -181,20 +207,20 @@ class CvPdfService {
             children: [
               pw.Expanded(
                 child: pw.Text(
-                  e.institution.isNotEmpty ? e.institution : 'Institution',
+                  _pdfText(e.institution.isNotEmpty ? e.institution : 'Institution'),
                   style: pw.TextStyle(font: bold, fontSize: 10),
                 ),
               ),
               if (e.gradYear.isNotEmpty)
-                pw.Text(e.gradYear, style: pw.TextStyle(font: regular, fontSize: 9)),
+                pw.Text(_pdfText(e.gradYear), style: pw.TextStyle(font: regular, fontSize: 9)),
             ],
           ),
           if (degree.isNotEmpty)
-            pw.Text(degree, style: pw.TextStyle(font: regular, fontSize: 9)),
+            pw.Text(_pdfText(degree), style: pw.TextStyle(font: regular, fontSize: 9)),
           if (e.gpa.isNotEmpty)
-            pw.Text('GPA: ${e.gpa}', style: pw.TextStyle(font: regular, fontSize: 9)),
+            pw.Text(_pdfText('GPA: ${e.gpa}'), style: pw.TextStyle(font: regular, fontSize: 9)),
           if (e.honors.isNotEmpty)
-            pw.Text(e.honors, style: pw.TextStyle(font: regular, fontSize: 9)),
+            pw.Text(_pdfText(e.honors), style: pw.TextStyle(font: regular, fontSize: 9)),
         ],
       ),
     );
@@ -207,24 +233,24 @@ class CvPdfService {
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
           pw.Text(
-            p.name,
+            _pdfText(p.name),
             style: pw.TextStyle(font: bold, fontSize: 10),
           ),
           if (p.role.isNotEmpty || p.technologies.isNotEmpty)
             pw.Text(
-              [if (p.role.isNotEmpty) p.role, if (p.technologies.isNotEmpty) p.technologies].join(' • '),
+              _pdfText([if (p.role.isNotEmpty) p.role, if (p.technologies.isNotEmpty) p.technologies].join(' | ')),
               style: pw.TextStyle(font: regular, fontSize: 9, color: PdfColors.grey700),
             ),
           if (p.description.trim().isNotEmpty)
             pw.Padding(
               padding: const pw.EdgeInsets.only(top: 3),
               child: pw.Text(
-                p.description.trim(),
+                _pdfText(p.description.trim()),
                 style: pw.TextStyle(font: regular, fontSize: 9, lineSpacing: 1.35),
               ),
             ),
           if (p.url.isNotEmpty)
-            pw.Text(p.url, style: pw.TextStyle(font: regular, fontSize: 8, color: PdfColors.grey600)),
+            pw.Text(_pdfText(p.url), style: pw.TextStyle(font: regular, fontSize: 8, color: PdfColors.grey600)),
         ],
       ),
     );
@@ -240,16 +266,16 @@ class CvPdfService {
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                pw.Text(c.name, style: pw.TextStyle(font: bold, fontSize: 10)),
+                pw.Text(_pdfText(c.name), style: pw.TextStyle(font: bold, fontSize: 10)),
                 if (c.issuer.isNotEmpty)
-                  pw.Text(c.issuer, style: pw.TextStyle(font: regular, fontSize: 9)),
+                  pw.Text(_pdfText(c.issuer), style: pw.TextStyle(font: regular, fontSize: 9)),
                 if (c.credentialId.isNotEmpty)
-                  pw.Text('ID: ${c.credentialId}', style: pw.TextStyle(font: regular, fontSize: 8)),
+                  pw.Text(_pdfText('ID: ${c.credentialId}'), style: pw.TextStyle(font: regular, fontSize: 8)),
               ],
             ),
           ),
           if (c.date.isNotEmpty)
-            pw.Text(c.date, style: pw.TextStyle(font: regular, fontSize: 9)),
+            pw.Text(_pdfText(c.date), style: pw.TextStyle(font: regular, fontSize: 9)),
         ],
       ),
     );

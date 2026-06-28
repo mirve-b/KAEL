@@ -88,23 +88,23 @@ class _CvProfileSectionState extends State<CvProfileSection> {
         _field('LinkedIn URL', _linkedin),
         _field('Website / Portfolio URL', _website),
         const SizedBox(height: 8),
-        Text('Professional Summary', style: CvTheme.body(size: 12).copyWith(color: CvTheme.textColor.withValues(alpha: 0.7))),
+        Text('Professional Summary', style: CvThemeScope.of(context).body(size: 12).copyWith(color: CvThemeScope.of(context).textColor.withValues(alpha: 0.7))),
         const SizedBox(height: 8),
         TextField(
           controller: _bio,
           maxLines: 6,
-          style: CvTheme.body(size: 14).copyWith(height: 1.6),
-          decoration: CvTheme.fieldDecoration('Write a brief ATS-friendly summary'),
+          style: CvThemeScope.of(context).body(size: 14).copyWith(height: 1.6),
+          decoration: CvThemeScope.of(context).fieldDecoration('Write a brief ATS-friendly summary'),
         ),
         const SizedBox(height: 24),
         Align(
           alignment: Alignment.center,
           child: TextButton.icon(
             onPressed: _save,
-            icon: const Icon(Symbols.save, size: 16, color: CvTheme.textColor),
-            label: Text('SAVE PROFILE', style: CvTheme.body(size: 11).copyWith(letterSpacing: 1.2)),
+            icon: Icon(Symbols.save, size: 16, color: CvThemeScope.of(context).textColor),
+            label: Text('SAVE PROFILE', style: CvThemeScope.of(context).body(size: 11).copyWith(letterSpacing: 1.2)),
             style: TextButton.styleFrom(
-              side: BorderSide(color: CvTheme.textColor.withValues(alpha: 0.35)),
+              side: BorderSide(color: CvThemeScope.of(context).textColor.withValues(alpha: 0.35)),
               padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
             ),
           ),
@@ -118,8 +118,8 @@ class _CvProfileSectionState extends State<CvProfileSection> {
       padding: const EdgeInsets.only(bottom: 14),
       child: TextField(
         controller: controller,
-        style: CvTheme.body(size: 14),
-        decoration: CvTheme.fieldDecoration(label),
+        style: CvThemeScope.of(context).body(size: 14),
+        decoration: CvThemeScope.of(context).fieldDecoration(label),
       ),
     );
   }
@@ -234,22 +234,22 @@ class _ExperienceCardState extends State<_ExperienceCard> {
           CheckboxListTile(
             value: _isCurrent,
             onChanged: (v) => setState(() => _isCurrent = v ?? false),
-            title: Text('I currently work here', style: CvTheme.body(size: 12)),
-            activeColor: CvTheme.textColor,
+            title: Text('I currently work here', style: CvThemeScope.of(context).body(size: 12)),
+            activeColor: CvThemeScope.of(context).textColor,
             contentPadding: EdgeInsets.zero,
             controlAffinity: ListTileControlAffinity.leading,
           ),
           TextField(
             controller: _description,
             maxLines: 5,
-            style: CvTheme.body(size: 13).copyWith(height: 1.5),
-            decoration: CvTheme.fieldDecoration('Description / achievements'),
+            style: CvThemeScope.of(context).body(size: 13).copyWith(height: 1.5),
+            decoration: CvThemeScope.of(context).fieldDecoration('Description / achievements'),
             onChanged: (_) => _save(),
           ),
           const SizedBox(height: 8),
           Align(
             alignment: Alignment.centerRight,
-            child: TextButton(onPressed: _save, child: Text('SAVE', style: CvTheme.body(size: 11))),
+            child: TextButton(onPressed: _save, child: Text('SAVE', style: CvThemeScope.of(context).body(size: 11))),
           ),
         ],
       ),
@@ -262,8 +262,8 @@ class _ExperienceCardState extends State<_ExperienceCard> {
       child: TextField(
         controller: c,
         enabled: enabled,
-        style: CvTheme.body(size: 13),
-        decoration: CvTheme.fieldDecoration(label),
+        style: CvThemeScope.of(context).body(size: 13),
+        decoration: CvThemeScope.of(context).fieldDecoration(label),
         onChanged: (_) => _save(),
       ),
     );
@@ -369,8 +369,8 @@ class _ProjectCardState extends State<_ProjectCard> {
       child: TextField(
         controller: c,
         maxLines: maxLines,
-        style: CvTheme.body(size: 13),
-        decoration: CvTheme.fieldDecoration(label),
+        style: CvThemeScope.of(context).body(size: 13),
+        decoration: CvThemeScope.of(context).fieldDecoration(label),
         onChanged: (_) => _save(),
       ),
     );
@@ -405,9 +405,9 @@ class CvSkillsSection extends StatelessWidget {
         ),
         if (user.hobbies.isNotEmpty) ...[
           const SizedBox(height: 24),
-          Text('Hobbies / Interests', style: CvTheme.body(size: 12).copyWith(color: CvTheme.textColor.withValues(alpha: 0.7))),
+          Text('Hobbies / Interests', style: CvThemeScope.of(context).body(size: 12).copyWith(color: CvThemeScope.of(context).textColor.withValues(alpha: 0.7))),
           const SizedBox(height: 8),
-          Text(user.hobbies, style: CvTheme.body(size: 13).copyWith(height: 1.5)),
+          Text(user.hobbies, style: CvThemeScope.of(context).body(size: 13).copyWith(height: 1.5)),
         ],
       ],
     );
@@ -533,8 +533,8 @@ class _EducationCardState extends State<_EducationCard> {
       padding: const EdgeInsets.only(bottom: 10),
       child: TextField(
         controller: c,
-        style: CvTheme.body(size: 13),
-        decoration: CvTheme.fieldDecoration(label),
+        style: CvThemeScope.of(context).body(size: 13),
+        decoration: CvThemeScope.of(context).fieldDecoration(label),
         onChanged: (_) => _save(),
       ),
     );
@@ -639,8 +639,8 @@ class _CertCardState extends State<_CertCard> {
       padding: const EdgeInsets.only(bottom: 10),
       child: TextField(
         controller: c,
-        style: CvTheme.body(size: 13),
-        decoration: CvTheme.fieldDecoration(label),
+        style: CvThemeScope.of(context).body(size: 13),
+        decoration: CvThemeScope.of(context).fieldDecoration(label),
         onChanged: (_) => _save(),
       ),
     );

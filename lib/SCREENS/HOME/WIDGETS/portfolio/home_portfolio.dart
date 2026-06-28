@@ -50,25 +50,11 @@ class _HomePortfolioState extends State<HomePortfolio> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = KaelTheme.of(context.watch<ProjectProvider>().isLightMode);
+
     return ListenableBuilder(
       listenable: widget.userData,
       builder: (context, _) {
-        if (widget.activeProjectId != null) {
-          final activeProject = widget.projectsProvider.projects.firstWhere(
-            (p) => p.id == widget.activeProjectId,
-            orElse: () => widget.projectsProvider.projects.first,
-          );
-
-          return Container(
-            color: const Color.fromARGB(255, 18, 18, 18),
-            child: CaseStudyView(
-              project: activeProject,
-              onBackToEdit: () => widget.onProjectSelect(null),
-              onDonePressed: () => widget.onProjectSelect(null),
-            ),
-          );
-        }
-
         return LayoutBuilder(
           builder: (context, constraints) {
             return Column(
@@ -80,14 +66,14 @@ class _HomePortfolioState extends State<HomePortfolio> {
                       duration: const Duration(milliseconds: 400),
                       child: !widget.isGenerated
                           ? PortfolioEmptyState(onGenerateTap: widget.onGenerateTap)
-                          : _buildLivePortfolioCanvas(constraints.maxWidth),
+                          : _buildLivePortfolioCanvas(constraints.maxWidth, theme),
                     ),
                   ),
                 ),
                 const SizedBox(height: 10),
                 SizedBox(
                   width: constraints.maxWidth,
-                  child: PortfolioCustomizer(userData: widget.userData),
+                  child: PortfolioCustomizer(userData: widget.userData, theme: theme),
                 ),
               ],
             );
@@ -97,9 +83,61 @@ class _HomePortfolioState extends State<HomePortfolio> {
     );
   }
 
-  Widget _buildLivePortfolioCanvas(double width) {
-    final theme = KaelTheme.of(context.watch<ProjectProvider>().isLightMode);
+  Widget _buildLivePortfolioCanvas(double width, KaelTheme theme) {
+    if (widget.activeProjectId != null) {
+      final activeProject = widget.projectsProvider.projects.firstWhere(
+        (p) => p.id == widget.activeProjectId,
+        orElse: () => widget.projectsProvider.savedProjectsForPortfolio.first,
+      );
 
+      return _buildGlassShell(
+        width: width,
+        theme: theme,
+        child: CaseStudyView(
+          project: activeProject,
+          theme: theme,
+          glassMode: true,
+          onBackToEdit: () => widget.onProjectSelect(null),
+          onDonePressed: () => widget.onProjectSelect(null),
+        ),
+      );
+    }
+
+    return _buildGlassShell(
+      width: width,
+      theme: theme,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+        child: DefaultTextStyle(
+          style: TextStyle(
+            fontFamily: widget.userData.fontFamily,
+            color: theme.textPrimary,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              PortfolioHeroBanner(userData: widget.userData, theme: theme),
+              const SizedBox(height: 10),
+              PortfolioAboutSection(userData: widget.userData, theme: theme),
+              const SizedBox(height: 10),
+              PortfolioProjectGrid(
+                projectsProvider: widget.projectsProvider,
+                theme: theme,
+                onProjectSelect: widget.onProjectSelect,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGlassShell({
+    required double width,
+    required KaelTheme theme,
+    required Widget child,
+  }) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 500),
       width: width,
@@ -114,32 +152,11 @@ class _HomePortfolioState extends State<HomePortfolio> {
           filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
           child: Container(
             color: Color.alphaBlend(
-              widget.userData.portfolioBgColor.withValues(alpha: 0.32),
-              theme.panelBackground,
+              widget.userData.portfolioBgColor.withValues(alpha: 0.48),
+              theme.panelBackground.withValues(alpha: 0.94),
             ),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
-              child: DefaultTextStyle(
-                style: TextStyle(
-                  fontFamily: widget.userData.fontFamily,
-                  color: widget.userData.textColor,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    PortfolioHeroBanner(userData: widget.userData),
-                    const SizedBox(height: 10),
-                    PortfolioAboutSection(userData: widget.userData),
-                    const SizedBox(height: 10),
-                    PortfolioProjectGrid(
-                      projectsProvider: widget.projectsProvider,
-                      onProjectSelect: widget.onProjectSelect,
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            padding: const EdgeInsets.all(24),
+            child: child,
           ),
         ),
       ),
@@ -149,7 +166,9 @@ class _HomePortfolioState extends State<HomePortfolio> {
 
 class PortfolioCustomizer extends StatefulWidget {
   final UserDataModel userData;
-  const PortfolioCustomizer({super.key, required this.userData});
+  final KaelTheme theme;
+
+  const PortfolioCustomizer({super.key, required this.userData, required this.theme});
 
   @override
   State<PortfolioCustomizer> createState() => _PortfolioCustomizerState();
@@ -194,22 +213,24 @@ class _PortfolioCustomizerState extends State<PortfolioCustomizer> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = widget.theme;
+
     return Container(
       height: 50,
       padding: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 0, 0, 0),
+        color: theme.bottomBarBackground,
         borderRadius: BorderRadius.circular(25),
-        border: Border.all(color: Colors.white12),
+        border: Border.all(color: theme.sidebarBorder.withValues(alpha: 0.5)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text("STYLE", style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 2)),
+          Text("STYLE", style: TextStyle(color: theme.textMuted, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 2)),
           const SizedBox(width: 20),
-          _CustomBouncyButton(label: "FONT", onTap: _showFontOptions),
-          _CustomBouncyButton(label: "TEXT COLOUR", onTap: () => _pickColor(false)),
-          _CustomBouncyButton(label: "BG COLOUR", onTap: () => _pickColor(true)),
+          _CustomBouncyButton(label: "FONT", theme: theme, onTap: _showFontOptions),
+          _CustomBouncyButton(label: "TEXT COLOUR", theme: theme, onTap: () => _pickColor(false)),
+          _CustomBouncyButton(label: "BG COLOUR", theme: theme, onTap: () => _pickColor(true)),
         ],
       ),
     );
@@ -218,8 +239,10 @@ class _PortfolioCustomizerState extends State<PortfolioCustomizer> {
 
 class _CustomBouncyButton extends StatefulWidget {
   final String label;
+  final KaelTheme theme;
   final VoidCallback onTap;
-  const _CustomBouncyButton({required this.label, required this.onTap});
+
+  const _CustomBouncyButton({required this.label, required this.theme, required this.onTap});
 
   @override
   State<_CustomBouncyButton> createState() => _CustomBouncyButtonState();
@@ -230,6 +253,8 @@ class _CustomBouncyButtonState extends State<_CustomBouncyButton> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = widget.theme;
+
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
@@ -244,18 +269,16 @@ class _CustomBouncyButtonState extends State<_CustomBouncyButton> {
             curve: Curves.easeOutBack,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
             decoration: BoxDecoration(
-              color: _isHovered 
-                  ? const Color.fromARGB(140, 127, 98, 39) 
-                  : const Color.fromARGB(60, 127, 98, 39),
+              color: theme.bouncyButtonFill(_isHovered),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: _isHovered ? const Color.fromARGB(150, 212, 195, 163) : Colors.transparent,
+                color: _isHovered ? theme.hoverBorder : Colors.transparent,
               ),
             ),
             child: Text(
               widget.label,
               style: TextStyle(
-                color: _isHovered ? const Color(0xFFD4C3A3) : const Color.fromARGB(255, 191, 178, 160),
+                color: theme.bouncyButtonText(_isHovered),
                 fontSize: 11,
                 fontWeight: _isHovered ? FontWeight.bold : FontWeight.normal,
                 letterSpacing: 1.1,

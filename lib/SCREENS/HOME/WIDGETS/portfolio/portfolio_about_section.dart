@@ -2,11 +2,13 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:kael/SCREENS/FORMS/DATA%20MODEL/user_data_model.dart';
+import 'package:kael/SCREENS/GLOBAL%20WIDGETS/kael_theme.dart';
 
 class PortfolioAboutSection extends StatefulWidget {
   final UserDataModel userData;
+  final KaelTheme theme;
 
-  const PortfolioAboutSection({super.key, required this.userData});
+  const PortfolioAboutSection({super.key, required this.userData, required this.theme});
 
   @override
   State<PortfolioAboutSection> createState() => _PortfolioAboutSectionState();
@@ -14,18 +16,40 @@ class PortfolioAboutSection extends StatefulWidget {
 
 class _PortfolioAboutSectionState extends State<PortfolioAboutSection> {
   bool _isHovered = false;
+  late TextEditingController _bioController;
+
+  @override
+  void initState() {
+    super.initState();
+    _bioController = TextEditingController(text: widget.userData.bio);
+    widget.userData.addListener(_syncFromModel);
+  }
+
+  @override
+  void dispose() {
+    widget.userData.removeListener(_syncFromModel);
+    _bioController.dispose();
+    super.dispose();
+  }
+
+  void _syncFromModel() {
+    if (_bioController.text != widget.userData.bio) {
+      _bioController.text = widget.userData.bio;
+    }
+    if (mounted) setState(() {});
+  }
 
   Future<void> _pickAboutImage() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.image);
     if (result != null && result.files.single.path != null) {
-      // Assuming your model has this method; update if named differently
       widget.userData.updateAboutImage(result.files.single.path);
-      setState(() {}); 
+      setState(() {});
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = widget.theme;
     final String? aboutImagePath = widget.userData.aboutImagePath;
 
     return Padding(
@@ -39,24 +63,33 @@ class _PortfolioAboutSectionState extends State<PortfolioAboutSection> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 10),
-                const Text(
+                Text(
                   "ABOUT ME",
                   style: TextStyle(
-                    color: Colors.white,
+                    color: theme.textPrimary,
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 2.0,
                   ),
                 ),
-                const SizedBox(height: 5),
-                Text(
-                  widget.userData.bio,
-                  style: const TextStyle(
-                    color: Color.fromARGB(255, 146, 146, 146),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _bioController,
+                  maxLines: null,
+                  style: TextStyle(
+                    color: theme.textSecondary,
                     fontSize: 13,
                     height: 1.6,
                     fontWeight: FontWeight.w300,
+                    fontFamily: widget.userData.fontFamily,
                   ),
+                  decoration: InputDecoration(
+                    isDense: true,
+                    border: InputBorder.none,
+                    hintText: 'Write your bio...',
+                    hintStyle: TextStyle(color: theme.textMuted, fontSize: 13),
+                  ),
+                  onChanged: (v) => widget.userData.updatePortfolioIdentity(bio: v),
                 ),
               ],
             ),
@@ -67,9 +100,9 @@ class _PortfolioAboutSectionState extends State<PortfolioAboutSection> {
             child: Container(
               height: 180,
               decoration: BoxDecoration(
-                color: Colors.black,
+                color: theme.portfolioSurface,
                 borderRadius: BorderRadius.circular(15),
-                border: Border.all(color: const Color.fromARGB(60, 150, 143, 132), width: 1),
+                border: Border.all(color: theme.portfolioSurfaceBorder, width: 1),
                 image: aboutImagePath != null
                     ? DecorationImage(image: FileImage(File(aboutImagePath)), fit: BoxFit.cover)
                     : null,
@@ -79,7 +112,7 @@ class _PortfolioAboutSectionState extends State<PortfolioAboutSection> {
                   Positioned(
                     bottom: 15,
                     right: 15,
-                    child: aboutImagePath == null ? _buildAddButton() : _buildEditButton(),
+                    child: aboutImagePath == null ? _buildAddButton(theme) : _buildEditButton(),
                   )
                 ],
               ),
@@ -90,7 +123,7 @@ class _PortfolioAboutSectionState extends State<PortfolioAboutSection> {
     );
   }
 
-  Widget _buildAddButton() {
+  Widget _buildAddButton(KaelTheme theme) {
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
@@ -100,11 +133,19 @@ class _PortfolioAboutSectionState extends State<PortfolioAboutSection> {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
           decoration: BoxDecoration(
-            color: _isHovered ? const Color(0xFFD4C3A3) : const Color.fromARGB(35, 212, 195, 163),
+            color: theme.bouncyButtonFill(_isHovered),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color.fromARGB(60, 212, 195, 163)),
+            border: Border.all(color: _isHovered ? theme.hoverBorder : theme.portfolioSurfaceBorder),
           ),
-          child: Text("ADD AN IMAGE", style: TextStyle(color: _isHovered ? Colors.black : const Color(0xFFD4C3A3), fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+          child: Text(
+            "ADD AN IMAGE",
+            style: TextStyle(
+              color: theme.bouncyButtonText(_isHovered),
+              fontSize: 9,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.0,
+            ),
+          ),
         ),
       ),
     );
