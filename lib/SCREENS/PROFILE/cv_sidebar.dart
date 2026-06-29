@@ -15,6 +15,7 @@ class CVSidebar extends StatelessWidget {
   final Function(String) onSectionClick;
   final VoidCallback onPreview;
   final VoidCallback onExport;
+  final VoidCallback onJobMatch;
   final bool isExporting;
 
   const CVSidebar({
@@ -25,6 +26,7 @@ class CVSidebar extends StatelessWidget {
     required this.onSectionClick,
     required this.onPreview,
     required this.onExport,
+    required this.onJobMatch,
     this.isExporting = false,
   });
 
@@ -167,6 +169,13 @@ class CVSidebar extends StatelessWidget {
             ),
           ),
           Divider(color: theme.sidebarBorder.withValues(alpha: 0.4), height: 30),
+          _AnimatedSidebarItem(
+            label: "JOB MATCH",
+            isSelected: activeSection == 'JOB MATCH',
+            isAction: true,
+            theme: theme,
+            onTap: onJobMatch,
+          ),
           _AnimatedSidebarItem(
             label: "PREVIEW ATS CV",
             isSelected: false,

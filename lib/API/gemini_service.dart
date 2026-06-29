@@ -28,6 +28,17 @@ class GeminiService {
     required List<ProjectCell> cells,
   }) async {
     final parts = await _buildContentParts(user: user, projectTitle: projectTitle, cells: cells);
+    return generateFromParts(parts);
+  }
+
+  Future<String> generateText(String prompt, {Duration timeout = const Duration(seconds: 60)}) {
+    return generateFromParts([TextPart(prompt)], timeout: timeout);
+  }
+
+  Future<String> generateFromParts(
+    List<Part> parts, {
+    Duration timeout = const Duration(seconds: 120),
+  }) async {
     Object? lastError;
 
     for (final modelName in _modelFallbackChain) {
@@ -39,7 +50,7 @@ class GeminiService {
           );
           final response = await model
               .generateContent([Content.multi(parts)])
-              .timeout(const Duration(seconds: 120));
+              .timeout(timeout);
 
           if (response.text == null || response.text!.trim().isEmpty) {
             throw Exception('API returned an empty response.');
@@ -58,7 +69,7 @@ class GeminiService {
       }
     }
 
-    throw lastError ?? Exception('Case study generation failed.');
+    throw lastError ?? Exception('Gemini request failed.');
   }
 
   bool _isRetryable(Object error) {

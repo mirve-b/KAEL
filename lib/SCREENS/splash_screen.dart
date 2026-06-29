@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-// Import your new loading screen widget here (adjust path if your folder structure is different)
-import 'package:kael/SCREENS/GLOBAL%20WIDGETS/miffy_loading_screen.dart'; 
+import 'package:kael/SCREENS/LANDING%20PAGE/welcome_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -10,9 +9,7 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
-  
+class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
 
@@ -31,16 +28,15 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    // fade in for 2s → fade out for 2s
     Timer(const Duration(seconds: 2), () {
       _controller.reverse();
     });
 
-    // After 4s total, cleanly move directly to the Miffy Bunny loading sequence!
     Timer(const Duration(seconds: 4), () {
+      if (!mounted) return;
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
-          pageBuilder: (_, __, ___) => const MiffyLoadingScreen(), // Seamlessly inserted!
+          pageBuilder: (_, __, ___) => const WelcomeScreen2(),
           transitionsBuilder: (_, animation, __, child) =>
               FadeTransition(opacity: animation, child: child),
           transitionDuration: const Duration(milliseconds: 800),

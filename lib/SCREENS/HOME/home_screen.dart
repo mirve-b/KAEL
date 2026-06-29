@@ -99,7 +99,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
-  void _showDeleteConfirmation(int idx, String title, ProjectProvider projects) {
+  void _showDeleteConfirmation(int idx, String title, ProjectProvider projects, UserDataModel user) {
     final String idToDelete = projects.projects[idx].id;
     showDialog(
       context: context,
@@ -118,7 +118,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 activePortfolioProjectId = openPortfolioTabIds.isNotEmpty ? openPortfolioTabIds.last : null;
               }
             });
-            projects.deleteProject(idx); 
+            projects.deleteProject(idx);
+            user.removeCvProjectById(idToDelete);
             Navigator.pop(context);
           }, child: const Text("DELETE PERMANENTLY", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold))),
         ],
@@ -195,7 +196,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       });
                     },
                     onRenameRequest: (idx, title) => _showRenameDialog(idx, title, projectData),
-                    onDeleteRequest: (idx, title) => _showDeleteConfirmation(idx, title, projectData),
+                    onDeleteRequest: (idx, title) => _showDeleteConfirmation(idx, title, projectData, userData),
                   ),
                   const SizedBox(width: 20),
                   Expanded(

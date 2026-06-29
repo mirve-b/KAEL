@@ -282,7 +282,7 @@ class CvProjectsSection extends StatelessWidget {
       children: [
         CvSectionHeader(
           title: 'PROJECTS',
-          subtitle: 'Highlight personal or professional projects for your CV.',
+          subtitle: 'Saved catalog projects sync here automatically with AI-filled role, tools, and summary.',
           onAdd: user.addCvProject,
         ),
         if (user.cvProjects.isEmpty)
@@ -315,14 +315,49 @@ class _ProjectCardState extends State<_ProjectCard> {
   late TextEditingController _url;
 
   @override
+  void didUpdateWidget(covariant _ProjectCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.entry.id != widget.entry.id) {
+      _syncControllers(widget.entry);
+      return;
+    }
+    if (oldWidget.entry.name != widget.entry.name && widget.entry.name != _name.text) {
+      _name.text = widget.entry.name;
+    }
+    if (oldWidget.entry.role != widget.entry.role && widget.entry.role != _role.text) {
+      _role.text = widget.entry.role;
+    }
+    if (oldWidget.entry.technologies != widget.entry.technologies &&
+        widget.entry.technologies != _tech.text) {
+      _tech.text = widget.entry.technologies;
+    }
+    if (oldWidget.entry.description != widget.entry.description &&
+        widget.entry.description != _desc.text) {
+      _desc.text = widget.entry.description;
+    }
+    if (oldWidget.entry.url != widget.entry.url && widget.entry.url != _url.text) {
+      _url.text = widget.entry.url;
+    }
+  }
+
+  void _syncControllers(CvProjectEntry entry) {
+    if (_name.text != entry.name) _name.text = entry.name;
+    if (_role.text != entry.role) _role.text = entry.role;
+    if (_tech.text != entry.technologies) _tech.text = entry.technologies;
+    if (_desc.text != entry.description) _desc.text = entry.description;
+    if (_url.text != entry.url) _url.text = entry.url;
+  }
+
+  @override
   void initState() {
     super.initState();
     final e = widget.entry;
-    _name = TextEditingController(text: e.name);
-    _role = TextEditingController(text: e.role);
-    _tech = TextEditingController(text: e.technologies);
-    _desc = TextEditingController(text: e.description);
-    _url = TextEditingController(text: e.url);
+    _name = TextEditingController();
+    _role = TextEditingController();
+    _tech = TextEditingController();
+    _desc = TextEditingController();
+    _url = TextEditingController();
+    _syncControllers(e);
   }
 
   @override
@@ -337,11 +372,11 @@ class _ProjectCardState extends State<_ProjectCard> {
     widget.user.updateCvProject(
       widget.index,
       widget.entry.copyWith(
-        name: _name.text.trim(),
-        role: _role.text.trim(),
-        technologies: _tech.text.trim(),
-        description: _desc.text.trim(),
-        url: _url.text.trim(),
+        name: _name.text,
+        role: _role.text,
+        technologies: _tech.text,
+        description: _desc.text,
+        url: _url.text,
       ),
     );
   }

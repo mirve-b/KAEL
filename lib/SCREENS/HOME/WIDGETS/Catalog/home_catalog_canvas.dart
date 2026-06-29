@@ -127,9 +127,21 @@ class HomeCanvas extends StatelessWidget {
                                 }
                                 onTogglePreview(false);
                               },
-                              onDonePressed: () {
+                              onDonePressed: () async {
                                 projects.finalizeCaseStudy(true);
                                 onTogglePreview(false);
+                                final synced = await projects.syncCurrentProjectToProfile(userData);
+                                if (!context.mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      synced
+                                          ? 'Project added to Profile > Projects with AI-filled details.'
+                                          : 'Project added to Profile > Projects. Review and refine the fields in your CV.',
+                                    ),
+                                    duration: const Duration(seconds: 5),
+                                  ),
+                                );
                               },
                             )
                           : _buildEditorContent(context, theme))

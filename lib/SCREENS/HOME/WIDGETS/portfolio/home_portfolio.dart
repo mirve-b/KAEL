@@ -152,8 +152,8 @@ class _HomePortfolioState extends State<HomePortfolio> {
           filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
           child: Container(
             color: Color.alphaBlend(
-              widget.userData.portfolioBgColor.withValues(alpha: 0.48),
-              theme.panelBackground.withValues(alpha: 0.94),
+              widget.userData.portfolioBgColor.withValues(alpha: 0.42),
+              theme.panelBackground.withValues(alpha: 0.52),
             ),
             padding: const EdgeInsets.all(24),
             child: child,

@@ -11,7 +11,7 @@ class UserDataModel extends ChangeNotifier {
   String title = "";
   String country = "";
   String phone = "";
-  String bio = "UI/UX Designer with experience creating intuitive, user-centered digital products. Passionate about translating complex problems into simple, meaningful experiences.";
+  String bio = "";
   String linkedinUrl = "";
   String websiteUrl = "";
 
@@ -213,6 +213,22 @@ class UserDataModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Links catalog projects to profile CV entries via shared [id].
+  void upsertCvProject(CvProjectEntry entry) {
+    final idx = cvProjects.indexWhere((p) => p.id == entry.id);
+    if (idx >= 0) {
+      cvProjects[idx] = entry;
+    } else {
+      cvProjects.add(entry);
+    }
+    notifyListeners();
+  }
+
+  void removeCvProjectById(String id) {
+    cvProjects.removeWhere((p) => p.id == id);
+    notifyListeners();
+  }
+
   // --- SKILLS ---
   void addSkill(String skill) {
     final trimmed = skill.trim();
@@ -330,5 +346,88 @@ class UserDataModel extends ChangeNotifier {
     return buffer.toString().trim().isEmpty
         ? 'No profile details added yet — infer discipline from project content only.'
         : buffer.toString().trim();
+  }
+
+  /// Full numbered CV payload for job-match / tailoring prompts.
+  String buildFullCvContextForAi() {
+    ensureEducationSeeded();
+    final buffer = StringBuffer();
+
+    buffer.writeln('Name: ${name.isEmpty ? "(not set)" : name}');
+    buffer.writeln('Title: ${title.isEmpty ? "(not set)" : title}');
+    buffer.writeln('Email: ${email.isEmpty ? "(not set)" : email}');
+    buffer.writeln('Phone: ${phone.isEmpty ? "(not set)" : phone}');
+    buffer.writeln('Country: ${country.isEmpty ? "(not set)" : country}');
+    if (linkedinUrl.isNotEmpty) buffer.writeln('LinkedIn: $linkedinUrl');
+    if (websiteUrl.isNotEmpty) buffer.writeln('Website: $websiteUrl');
+    buffer.writeln('Bio: ${bio.isEmpty ? "(not set)" : bio}');
+
+    buffer.writeln('\nSKILLS (index:value):');
+    if (skills.isEmpty) {
+      buffer.writeln('(none)');
+    } else {
+      for (var i = 0; i < skills.length; i++) {
+        buffer.writeln('[$i] ${skills[i]}');
+      }
+    }
+
+    buffer.writeln('\nEXPERIENCES (index:entry):');
+    if (experiences.isEmpty) {
+      buffer.writeln('(none)');
+    } else {
+      for (var i = 0; i < experiences.length; i++) {
+        final e = experiences[i];
+        buffer.writeln(
+          '[$i] ${e.jobTitle}${e.company.isNotEmpty ? ' @ ${e.company}' : ''} '
+          '(${e.dateRange}) — ${e.description}',
+        );
+      }
+    }
+
+    buffer.writeln('\nPROJECTS (index:entry):');
+    if (cvProjects.isEmpty) {
+      buffer.writeln('(none)');
+    } else {
+      for (var i = 0; i < cvProjects.length; i++) {
+        final p = cvProjects[i];
+        buffer.writeln(
+          '[$i] ${p.name}${p.role.isNotEmpty ? ' — ${p.role}' : ''} '
+          '[${p.technologies}] ${p.description}',
+        );
+      }
+    }
+
+    buffer.writeln('\nEDUCATION (index:entry):');
+    if (educationEntries.isEmpty) {
+      buffer.writeln('(none)');
+    } else {
+      for (var i = 0; i < educationEntries.length; i++) {
+        final e = educationEntries[i];
+        buffer.writeln(
+          '[$i] ${e.level} ${e.fieldOfStudy} @ ${e.institution} (${e.gradYear})',
+        );
+      }
+    }
+
+    buffer.writeln('\nCERTIFICATIONS (index:entry):');
+    if (certifications.isEmpty) {
+      buffer.writeln('(none)');
+    } else {
+      for (var i = 0; i < certifications.length; i++) {
+        final c = certifications[i];
+        buffer.writeln('[$i] ${c.name} — ${c.issuer} (${c.date})');
+      }
+    }
+
+    buffer.writeln('\nLANGUAGES (index:value):');
+    if (languages.isEmpty) {
+      buffer.writeln('(none)');
+    } else {
+      for (var i = 0; i < languages.length; i++) {
+        buffer.writeln('[$i] ${languages[i]}');
+      }
+    }
+
+    return buffer.toString().trim();
   }
 }

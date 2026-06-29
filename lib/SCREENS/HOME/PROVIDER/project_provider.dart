@@ -1,12 +1,15 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:kael/API/cv_project_extractor.dart';
 import 'package:kael/API/gemini_service.dart';
 import 'package:kael/SCREENS/FORMS/DATA%20MODEL/user_data_model.dart';
 import 'package:kael/SCREENS/HOME/DATA%20MODEL/project_model.dart';
+import 'package:kael/SCREENS/PROFILE/DATA%20MODEL/cv_models.dart';
 
 class ProjectProvider extends ChangeNotifier {
   final GeminiService _geminiService = GeminiService();
+  final CvProjectExtractor _cvProjectExtractor = CvProjectExtractor();
   
   // --- DATA ---
   final List<ProjectPage> _projects = [
@@ -181,6 +184,38 @@ class ProjectProvider extends ChangeNotifier {
   void finalizeCaseStudy(bool savedState) {
     currentProject.isSaved = savedState;
     notifyListeners();
+  }
+
+  bool _isSyncingProfile = false;
+  bool get isSyncingProfile => _isSyncingProfile;
+
+  /// Adds or updates the matching Profile > Projects entry using AI-extracted CV fields.
+  Future<bool> syncCurrentProjectToProfile(UserDataModel user) async {
+    final project = currentProject;
+    if (project.id == '0' || !project.isSaved || project.caseStudy == null) {
+      return false;
+    }
+
+    _isSyncingProfile = true;
+    notifyListeners();
+
+    user.upsertCvProject(CvProjectEntry(
+      id: project.id,
+      name: project.title,
+      description: 'Generating CV project summary...',
+    ));
+
+    try {
+      final entry = await _cvProjectExtractor.extract(user: user, project: project);
+      user.upsertCvProject(entry);
+      return true;
+    } catch (_) {
+      user.upsertCvProject(_cvProjectExtractor.fallback(project));
+      return false;
+    } finally {
+      _isSyncingProfile = false;
+      notifyListeners();
+    }
   }
 
   // --- GENERATION ENGINE LAYER ---

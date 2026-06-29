@@ -8,6 +8,7 @@ import 'package:kael/SCREENS/GLOBAL%20WIDGETS/kael_tab_bar.dart';
 import 'package:kael/SCREENS/GLOBAL%20WIDGETS/kael_theme.dart';
 import 'package:kael/SCREENS/HOME/PROVIDER/project_provider.dart';
 import 'package:kael/SCREENS/PROFILE/SERVICES/cv_pdf_service.dart';
+import 'package:kael/SCREENS/PROFILE/WIDGETS/cv_job_match_section.dart';
 import 'package:kael/SCREENS/PROFILE/WIDGETS/cv_sections.dart';
 import 'package:kael/SCREENS/PROFILE/WIDGETS/cv_ui_helpers.dart';
 import 'package:kael/SCREENS/PROFILE/cv_sidebar.dart';
@@ -144,6 +145,10 @@ class _PfpCVState extends State<PfpCV> {
               }),
               onPreview: _previewCv,
               onExport: _exportCv,
+              onJobMatch: () => setState(() {
+                activeSection = 'JOB MATCH';
+                if (!openTabs.contains('JOB MATCH')) openTabs.add('JOB MATCH');
+              }),
             ),
             const SizedBox(width: 20),
             Expanded(
@@ -219,6 +224,8 @@ class _PfpCVState extends State<PfpCV> {
         return CvEducationSection(user: user);
       case 'CERTIFICATIONS':
         return CvCertificationsSection(user: user);
+      case 'JOB MATCH':
+        return CvJobMatchSection(user: user, theme: theme);
       default:
         return Center(
           child: Text(

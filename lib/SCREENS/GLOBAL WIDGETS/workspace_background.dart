@@ -17,62 +17,83 @@ class WorkspaceBackground extends StatelessWidget {
     final theme = KaelTheme.of(context.watch<ProjectProvider>().isLightMode);
 
     final String? heroImagePath = userData.bannerPath ?? userData.finalPfpPath;
-    final charcoal = theme.canvasBackground;
+    final fadeTarget = theme.isLightMode
+        ? Colors.white
+        : const Color(0xFF121212);
 
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
-      color: charcoal,
+      color: fadeTarget,
       child: Stack(
         fit: StackFit.expand,
         children: [
           if (heroImagePath != null)
             LayoutBuilder(
               builder: (context, constraints) {
-                final imageHeight = constraints.maxHeight * 0.30;
-                final fadeHeight = constraints.maxHeight * 0.28;
-
                 return Stack(
                   fit: StackFit.expand,
                   children: [
-                    ColoredBox(color: charcoal),
-                    Positioned(
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      height: imageHeight + fadeHeight,
-                      child: ImageFiltered(
-                        imageFilter: ImageFilter.blur(sigmaX: 2.5, sigmaY: 2.5),
-                        child: Image.file(
-                          File(heroImagePath),
-                          fit: BoxFit.cover,
-                          alignment: Alignment.topCenter,
-                          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      height: imageHeight + fadeHeight,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.transparent,
-                              Colors.transparent,
-                              charcoal.withValues(alpha: 0.15),
-                              charcoal.withValues(alpha: 0.42),
-                              charcoal.withValues(alpha: 0.72),
-                              charcoal.withValues(alpha: 0.92),
-                              charcoal,
-                            ],
-                            stops: const [0.0, 0.35, 0.50, 0.65, 0.78, 0.90, 1.0],
+                    ColoredBox(color: fadeTarget),
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 400),
+                      child: Stack(
+                        key: ValueKey(heroImagePath),
+                        fit: StackFit.expand,
+                        children: [
+                          Positioned.fill(
+                            child: ImageFiltered(
+                              imageFilter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+                              child: Image.file(
+                                File(heroImagePath),
+                                fit: BoxFit.cover,
+                                alignment: Alignment.topCenter,
+                                width: constraints.maxWidth,
+                                height: constraints.maxHeight,
+                                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                              ),
+                            ),
                           ),
-                        ),
+                          // 0–6% pure image · 6–46% fade (40%) · 46–100% solid.
+                          Positioned.fill(
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.transparent,
+                                    fadeTarget.withValues(alpha: 0.05),
+                                    fadeTarget.withValues(alpha: 0.12),
+                                    fadeTarget.withValues(alpha: 0.22),
+                                    fadeTarget.withValues(alpha: 0.35),
+                                    fadeTarget.withValues(alpha: 0.50),
+                                    fadeTarget.withValues(alpha: 0.66),
+                                    fadeTarget.withValues(alpha: 0.82),
+                                    fadeTarget.withValues(alpha: 0.94),
+                                    fadeTarget,
+                                    fadeTarget,
+                                  ],
+                                  stops: const [
+                                    0.0,
+                                    0.06,
+                                    0.12,
+                                    0.18,
+                                    0.24,
+                                    0.30,
+                                    0.36,
+                                    0.40,
+                                    0.44,
+                                    0.46,
+                                    0.49,
+                                    1.0,
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],

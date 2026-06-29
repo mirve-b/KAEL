@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:kael/SCREENS/FORMS/DATA%20MODEL/user_data_model.dart';
+import 'package:kael/SCREENS/PROFILE/DATA%20MODEL/job_match_result.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
@@ -79,6 +80,81 @@ class CvPdfService {
             _sectionTitle('LANGUAGES', boldFont),
             pw.Text(
               _pdfText(user.languages.join('  |  ')),
+              style: pw.TextStyle(font: baseFont, fontSize: 10),
+            ),
+          ],
+        ],
+      ),
+    );
+
+    return doc.save();
+  }
+
+  static Future<Uint8List> generateTailored(UserDataModel user, JobMatchResult match) async {
+    await _ensureFonts();
+    final baseFont = _regularFont!;
+    final boldFont = _boldFont!;
+
+    final summary = match.tailoredSummary.trim().isEmpty ? user.bio.trim() : match.tailoredSummary.trim();
+    final skills = match.skills.where((s) => s.trim().isNotEmpty).toList();
+    final experiences = match.experiences
+        .where((e) => e.jobTitle.isNotEmpty || e.company.isNotEmpty || e.description.isNotEmpty)
+        .toList();
+    final projects = match.projects.where((p) => p.name.isNotEmpty).toList();
+    final education = match.educationEntries
+        .where((e) => e.institution.isNotEmpty || e.fieldOfStudy.isNotEmpty)
+        .toList();
+    final certifications = match.certifications.where((c) => c.name.isNotEmpty).toList();
+    final languages = match.languages.where((l) => l.trim().isNotEmpty).toList();
+
+    final doc = pw.Document();
+    doc.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(48),
+        build: (context) => [
+          _buildHeader(user, boldFont, baseFont),
+          pw.SizedBox(height: 16),
+          if (summary.isNotEmpty) ...[
+            _sectionTitle('PROFESSIONAL SUMMARY', boldFont),
+            pw.Text(
+              _pdfText(summary),
+              style: pw.TextStyle(font: baseFont, fontSize: 10, lineSpacing: 1.4),
+            ),
+            pw.SizedBox(height: 12),
+          ],
+          if (experiences.isNotEmpty) ...[
+            _sectionTitle('EXPERIENCE', boldFont),
+            ...experiences.map((e) => _experienceBlock(e, boldFont, baseFont)),
+            pw.SizedBox(height: 8),
+          ],
+          if (education.isNotEmpty) ...[
+            _sectionTitle('EDUCATION', boldFont),
+            ...education.map((e) => _educationBlock(e, boldFont, baseFont)),
+            pw.SizedBox(height: 8),
+          ],
+          if (skills.isNotEmpty) ...[
+            _sectionTitle('SKILLS', boldFont),
+            pw.Text(
+              _pdfText(skills.join('  |  ')),
+              style: pw.TextStyle(font: baseFont, fontSize: 10, lineSpacing: 1.3),
+            ),
+            pw.SizedBox(height: 12),
+          ],
+          if (projects.isNotEmpty) ...[
+            _sectionTitle('PROJECTS', boldFont),
+            ...projects.map((p) => _projectBlock(p, boldFont, baseFont)),
+            pw.SizedBox(height: 8),
+          ],
+          if (certifications.isNotEmpty) ...[
+            _sectionTitle('CERTIFICATIONS', boldFont),
+            ...certifications.map((c) => _certificationBlock(c, boldFont, baseFont)),
+          ],
+          if (languages.isNotEmpty) ...[
+            pw.SizedBox(height: 8),
+            _sectionTitle('LANGUAGES', boldFont),
+            pw.Text(
+              _pdfText(languages.join('  |  ')),
               style: pw.TextStyle(font: baseFont, fontSize: 10),
             ),
           ],
