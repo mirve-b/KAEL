@@ -197,6 +197,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     },
                     onRenameRequest: (idx, title) => _showRenameDialog(idx, title, projectData),
                     onDeleteRequest: (idx, title) => _showDeleteConfirmation(idx, title, projectData, userData),
+                    onRegeneratePortfolio: () {
+                      setState(() {
+                        isPortfolioGenerated = false;
+                        activePortfolioProjectId = null;
+                        openPortfolioTabIds.clear();
+                        currentNavSection = 'PORTFOLIO';
+                      });
+                    },
                   ),
                   const SizedBox(width: 20),
                   Expanded(

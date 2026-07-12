@@ -16,6 +16,7 @@ class HomeSidebar extends StatelessWidget {
   final Function(int) onProjectTap;
   final Function(int, String) onRenameRequest;
   final Function(int, String) onDeleteRequest;
+  final VoidCallback? onRegeneratePortfolio;
 
   const HomeSidebar({
     super.key,
@@ -29,6 +30,7 @@ class HomeSidebar extends StatelessWidget {
     required this.onProjectTap,
     required this.onRenameRequest,
     required this.onDeleteRequest,
+    this.onRegeneratePortfolio,
   });
 
   @override
@@ -119,6 +121,9 @@ class HomeSidebar extends StatelessWidget {
             isSelected: currentNavSection == "PORTFOLIO",
             theme: theme,
             onTap: () => onSectionTap("PORTFOLIO"),
+            onDoubleTapDetails: onRegeneratePortfolio != null
+                ? (details) => _showPortfolioMenu(context, details)
+                : null,
           ),
 
           const Spacer(),
@@ -158,6 +163,31 @@ class HomeSidebar extends StatelessWidget {
               Icon(Icons.add, color: Colors.white, size: 16),
               SizedBox(width: 10),
               Text("Create New Project", style: TextStyle(color: Colors.white, fontSize: 12)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showPortfolioMenu(BuildContext context, TapDownDetails details) {
+    final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    showMenu(
+      context: context,
+      color: const Color(0xFF1A1A1A),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      position: RelativeRect.fromRect(
+        details.globalPosition & const Size(40, 40),
+        Offset.zero & overlay.size,
+      ),
+      items: [
+        PopupMenuItem(
+          onTap: () => Future.delayed(Duration.zero, onRegeneratePortfolio),
+          child: const Row(
+            children: [
+              Icon(Icons.refresh, color: Colors.white, size: 16),
+              SizedBox(width: 10),
+              Text('Regenerate Portfolio', style: TextStyle(color: Colors.white, fontSize: 12)),
             ],
           ),
         ),

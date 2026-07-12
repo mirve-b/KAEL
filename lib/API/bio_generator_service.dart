@@ -6,6 +6,40 @@ class BioGeneratorService {
 
   BioGeneratorService({GeminiService? gemini}) : _gemini = gemini ?? GeminiService();
 
+  String _cvContext(UserDataModel user) {
+    final parts = <String>[];
+
+    if (user.experiences.isNotEmpty) {
+      final roles = user.experiences
+          .where((e) => e.jobTitle.isNotEmpty || e.company.isNotEmpty)
+          .take(3)
+          .map((e) => '${e.jobTitle} at ${e.company}'.trim())
+          .where((s) => s.isNotEmpty && s != 'at')
+          .join('; ');
+      if (roles.isNotEmpty) parts.add('Experience: $roles');
+    }
+
+    if (user.cvProjects.isNotEmpty) {
+      final projects = user.cvProjects
+          .where((p) => p.name.isNotEmpty)
+          .take(3)
+          .map((p) => p.role.isNotEmpty ? '${p.name} (${p.role})' : p.name)
+          .join('; ');
+      if (projects.isNotEmpty) parts.add('Projects: $projects');
+    }
+
+    if (user.educationEntries.isNotEmpty) {
+      final education = user.educationEntries
+          .where((e) => e.institution.isNotEmpty || e.fieldOfStudy.isNotEmpty)
+          .take(2)
+          .map((e) => '${e.level} ${e.fieldOfStudy} at ${e.institution}'.trim())
+          .join('; ');
+      if (education.isNotEmpty) parts.add('Education: $education');
+    }
+
+    return parts.isEmpty ? 'Not provided' : parts.join('\n');
+  }
+
   Future<String> generate(UserDataModel user) async {
     try {
       final prompt = '''
@@ -27,6 +61,8 @@ My skills: ${user.skills.isEmpty ? 'Not provided' : user.skills.join(', ')}
 Interests: ${user.interests.isEmpty ? 'Not provided' : user.interests.join(', ')}
 Hobbies: ${user.hobbies.isEmpty ? 'Not provided' : user.hobbies}
 Languages: ${user.languages.isEmpty ? 'Not provided' : user.languages.join(', ')}
+CV details:
+${_cvContext(user)}
 ''';
 
     final raw = await _gemini.generateText(prompt, timeout: const Duration(seconds: 60));

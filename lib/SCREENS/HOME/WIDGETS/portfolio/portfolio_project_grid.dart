@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:kael/SCREENS/FORMS/DATA%20MODEL/user_data_model.dart';
 import 'package:kael/SCREENS/GLOBAL%20WIDGETS/kael_theme.dart';
 import 'package:kael/SCREENS/HOME/PROVIDER/project_provider.dart';
 import 'package:kael/SCREENS/HOME/DATA%20MODEL/project_model.dart';
@@ -7,39 +8,74 @@ import 'package:kael/SCREENS/HOME/DATA%20MODEL/project_model.dart';
 class PortfolioProjectGrid extends StatelessWidget {
   final ProjectProvider projectsProvider;
   final KaelTheme theme;
+  final UserDataModel? userData;
   final Function(String?) onProjectSelect;
+  final String sectionTitle;
+  final String? sectionSubtitle;
+  final EdgeInsets titlePadding;
+  final Color? titleColor;
+  final bool flatTitleBox;
+  final bool useOpaqueSurface;
 
   const PortfolioProjectGrid({
     super.key,
     required this.projectsProvider,
     required this.theme,
+    this.userData,
     required this.onProjectSelect,
+    this.sectionTitle = 'MY WORK',
+    this.sectionSubtitle = 'DRAG HANDLE TO REORDER · RIGHT-CLICK THUMBNAIL TO CHANGE',
+    this.titlePadding = const EdgeInsets.only(left: 30),
+    this.titleColor,
+    this.flatTitleBox = false,
+    this.useOpaqueSurface = false,
   });
+
+  Color get _surfaceColor =>
+      useOpaqueSurface ? theme.portfolioOpaqueSurface : theme.portfolioSurface;
 
   @override
   Widget build(BuildContext context) {
     final savedCaseStudies = projectsProvider.savedProjectsForPortfolio;
+    final headingColor = titleColor ??
+        (userData != null ? userData!.resolveHeadingColor(theme) : theme.textPrimary);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 30),
-          child: Text(
-            "MY WORK",
-            style: TextStyle(
-              color: theme.textPrimary,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 2.0,
-            ),
-          ),
+          padding: titlePadding,
+          child: flatTitleBox
+              ? Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  color: _surfaceColor,
+                  child: Text(
+                    sectionTitle,
+                    style: TextStyle(
+                      color: headingColor,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.0,
+                      fontFamily: 'Serif',
+                    ),
+                  ),
+                )
+              : Text(
+                  sectionTitle,
+                  style: TextStyle(
+                    color: headingColor,
+                    fontSize: sectionTitle == 'Case Studies' ? 14 : 12,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: sectionTitle == 'Case Studies' ? 1.0 : 2.0,
+                    fontFamily: sectionTitle == 'Case Studies' ? 'Serif' : null,
+                  ),
+                ),
         ),
-        if (savedCaseStudies.isNotEmpty)
+        if (savedCaseStudies.isNotEmpty && sectionSubtitle != null)
           Padding(
-            padding: const EdgeInsets.only(left: 30, top: 4),
+            padding: titlePadding.add(const EdgeInsets.only(top: 4)),
             child: Text(
-              'DRAG HANDLE TO REORDER · RIGHT-CLICK THUMBNAIL TO CHANGE',
+              sectionSubtitle!,
               style: TextStyle(color: theme.textMuted, fontSize: 9, letterSpacing: 1.0),
             ),
           ),
@@ -49,8 +85,8 @@ class PortfolioProjectGrid extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(40),
                 decoration: BoxDecoration(
-                  color: theme.portfolioSurface,
-                  borderRadius: BorderRadius.circular(20),
+                  color: _surfaceColor,
+                  borderRadius: flatTitleBox ? BorderRadius.zero : BorderRadius.circular(20),
                 ),
                 child: Center(
                   child: Text(
@@ -63,9 +99,9 @@ class PortfolioProjectGrid extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(25),
                 decoration: BoxDecoration(
-                  color: theme.portfolioSurface,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: theme.portfolioSurfaceBorder, width: 1),
+                  color: _surfaceColor,
+                  borderRadius: flatTitleBox ? BorderRadius.zero : BorderRadius.circular(20),
+                  border: flatTitleBox ? null : Border.all(color: theme.portfolioSurfaceBorder, width: 1),
                 ),
                 child: LayoutBuilder(
                   builder: (context, constraints) {

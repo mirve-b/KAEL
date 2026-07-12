@@ -100,6 +100,12 @@ flutter:
     - family: "Inter"
       fonts:
         - asset: assets/fonts/Inter-VariableFont_opsz,wght.ttf
+    - family: CoveredByYourGrace
+      fonts:
+        - asset: assets/fonts/CoveredByYourGrace-Regular.ttf
+    - family: AnticDidone
+      fonts:
+        - asset: assets/fonts/AnticDidone-Regular.ttf
   #   - family: Trajan Pro
   #     fonts:
   #       - asset: fonts/TrajanPro.ttf

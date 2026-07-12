@@ -66,7 +66,7 @@ class _PortfolioAboutSectionState extends State<PortfolioAboutSection> {
                 Text(
                   "ABOUT ME",
                   style: TextStyle(
-                    color: theme.textPrimary,
+                    color: widget.userData.resolveHeadingColor(theme),
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 2.0,

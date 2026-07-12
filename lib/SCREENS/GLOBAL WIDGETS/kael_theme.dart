@@ -95,6 +95,10 @@ class KaelTheme {
   Color get portfolioSurface =>
       isLightMode ? Colors.white.withValues(alpha: 0.55) : Colors.black.withValues(alpha: 0.55);
 
+  /// Solid portfolio panels (work gallery, case studies, hello label).
+  Color get portfolioOpaqueSurface =>
+      isLightMode ? const Color(0xFFF0F0F0) : const Color(0xFF121212);
+
   Color get portfolioSurfaceBorder => sidebarBorder.withValues(alpha: 0.4);
 
   /// Catalog cell chrome.

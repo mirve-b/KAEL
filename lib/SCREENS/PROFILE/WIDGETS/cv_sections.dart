@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kael/API/bio_generator_service.dart';
 import 'package:kael/SCREENS/FORMS/DATA%20MODEL/user_data_model.dart';
 import 'package:kael/SCREENS/PROFILE/DATA%20MODEL/cv_models.dart';
 import 'package:kael/SCREENS/PROFILE/WIDGETS/cv_ui_helpers.dart';
@@ -22,6 +23,8 @@ class _CvProfileSectionState extends State<CvProfileSection> {
   late TextEditingController _bio;
   late TextEditingController _linkedin;
   late TextEditingController _website;
+  bool _isRegeneratingBio = false;
+  final BioGeneratorService _bioGenerator = BioGeneratorService();
 
   @override
   void initState() {
@@ -65,6 +68,47 @@ class _CvProfileSectionState extends State<CvProfileSection> {
     );
   }
 
+  void _syncFormToUser() {
+    widget.user.updateProfile(
+      n: _name.text.trim(),
+      t: _title.text.trim(),
+      c: _country.text.trim(),
+      p: _phone.text.trim(),
+      e: _email.text.trim(),
+      b: _bio.text.trim(),
+      linkedin: _linkedin.text.trim(),
+      website: _website.text.trim(),
+    );
+  }
+
+  Future<void> _regenerateBio() async {
+    if (_isRegeneratingBio) return;
+
+    setState(() => _isRegeneratingBio = true);
+    _syncFormToUser();
+
+    try {
+      final summary = await _bioGenerator.generate(widget.user);
+      if (!mounted) return;
+
+      setState(() {
+        _bio.text = summary;
+        _isRegeneratingBio = false;
+      });
+      widget.user.updatePortfolioIdentity(bio: summary);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Professional summary regenerated'), duration: Duration(seconds: 2)),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isRegeneratingBio = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not regenerate summary. Try again.'), duration: Duration(seconds: 2)),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -88,7 +132,37 @@ class _CvProfileSectionState extends State<CvProfileSection> {
         _field('LinkedIn URL', _linkedin),
         _field('Website / Portfolio URL', _website),
         const SizedBox(height: 8),
-        Text('Professional Summary', style: CvThemeScope.of(context).body(size: 12).copyWith(color: CvThemeScope.of(context).textColor.withValues(alpha: 0.7))),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Professional Summary',
+                style: CvThemeScope.of(context).body(size: 12).copyWith(color: CvThemeScope.of(context).textColor.withValues(alpha: 0.7)),
+              ),
+            ),
+            TextButton.icon(
+              onPressed: _isRegeneratingBio ? null : _regenerateBio,
+              icon: _isRegeneratingBio
+                  ? SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: CvThemeScope.of(context).textColor.withValues(alpha: 0.7),
+                      ),
+                    )
+                  : Icon(Symbols.auto_awesome, size: 14, color: CvThemeScope.of(context).textColor),
+              label: Text(
+                _isRegeneratingBio ? 'GENERATING...' : 'REGENERATE BIO',
+                style: CvThemeScope.of(context).body(size: 10).copyWith(letterSpacing: 1.1),
+              ),
+              style: TextButton.styleFrom(
+                side: BorderSide(color: CvThemeScope.of(context).textColor.withValues(alpha: 0.35)),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              ),
+            ),
+          ],
+        ),
         const SizedBox(height: 8),
         TextField(
           controller: _bio,

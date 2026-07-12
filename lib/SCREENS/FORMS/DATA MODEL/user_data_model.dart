@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kael/SCREENS/GLOBAL%20WIDGETS/kael_theme.dart';
 import 'package:kael/SCREENS/PROFILE/DATA%20MODEL/cv_models.dart';
 import 'dart:math';
 
@@ -55,8 +56,45 @@ class UserDataModel extends ChangeNotifier {
   }
 
   Color portfolioBgColor = const Color.fromARGB(255, 23, 23, 23);
-  Color textColor = Colors.white;
+  Color? textColor;
   String fontFamily = 'Inter';
+  String portfolioTemplateId = 'template1';
+  String? portfolioBgImagePath;
+  List<String> galleryImagePaths = [];
+
+  Color resolveHeadingColor(KaelTheme theme) =>
+      textColor ?? (theme.isLightMode ? const Color(0xFF1A1A1A) : Colors.white);
+
+  void updatePortfolioTemplate(String id) {
+    portfolioTemplateId = id;
+    notifyListeners();
+  }
+
+  void updatePortfolioBgImage(String? path) {
+    portfolioBgImagePath = path;
+    notifyListeners();
+  }
+
+  List<String> get activeGalleryImages =>
+      galleryImagePaths.where((path) => path.isNotEmpty).toList(growable: false);
+
+  void addGalleryImage(String path) {
+    if (path.isEmpty) return;
+    galleryImagePaths.add(path);
+    notifyListeners();
+  }
+
+  void replaceGalleryImageAt(int index, String path) {
+    if (index < 0 || index >= galleryImagePaths.length || path.isEmpty) return;
+    galleryImagePaths[index] = path;
+    notifyListeners();
+  }
+
+  void removeGalleryImageAt(int index) {
+    if (index < 0 || index >= galleryImagePaths.length) return;
+    galleryImagePaths.removeAt(index);
+    notifyListeners();
+  }
 
   void updatePortfolioTheme({Color? bg, Color? text, String? font}) {
     if (bg != null) portfolioBgColor = bg;

@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:kael/SCREENS/FORMS/DATA%20MODEL/user_data_model.dart';
 import 'package:kael/SCREENS/GLOBAL%20WIDGETS/kael_theme.dart';
 import 'package:kael/SCREENS/HOME/PROVIDER/project_provider.dart';
@@ -10,6 +12,8 @@ import 'package:kael/SCREENS/HOME/WIDGETS/portfolio/portfolio_about_section.dart
 import 'package:kael/SCREENS/HOME/WIDGETS/portfolio/portfolio_empty_state.dart';
 import 'package:kael/SCREENS/HOME/WIDGETS/portfolio/portfolio_hero_banner.dart';
 import 'package:kael/SCREENS/HOME/WIDGETS/portfolio/portfolio_project_grid.dart';
+import 'package:kael/SCREENS/HOME/WIDGETS/portfolio/portfolio_profile_sections.dart';
+import 'package:kael/SCREENS/HOME/WIDGETS/portfolio/portfolio_template2.dart';
 
 class HomePortfolio extends StatefulWidget {
   final UserDataModel userData;
@@ -65,7 +69,11 @@ class _HomePortfolioState extends State<HomePortfolio> {
                     child: AnimatedSwitcher(
                       duration: const Duration(milliseconds: 400),
                       child: !widget.isGenerated
-                          ? PortfolioEmptyState(onGenerateTap: widget.onGenerateTap)
+                          ? PortfolioEmptyState(
+                              userData: widget.userData,
+                              theme: theme,
+                              onGenerateTap: widget.onGenerateTap,
+                            )
                           : _buildLivePortfolioCanvas(constraints.maxWidth, theme),
                     ),
                   ),
@@ -106,30 +114,40 @@ class _HomePortfolioState extends State<HomePortfolio> {
     return _buildGlassShell(
       width: width,
       theme: theme,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
-        child: DefaultTextStyle(
-          style: TextStyle(
-            fontFamily: widget.userData.fontFamily,
-            color: theme.textPrimary,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              PortfolioHeroBanner(userData: widget.userData, theme: theme),
-              const SizedBox(height: 10),
-              PortfolioAboutSection(userData: widget.userData, theme: theme),
-              const SizedBox(height: 10),
-              PortfolioProjectGrid(
-                projectsProvider: widget.projectsProvider,
-                theme: theme,
-                onProjectSelect: widget.onProjectSelect,
+      child: widget.userData.portfolioTemplateId == 'template2'
+          ? PortfolioTemplate2(
+              userData: widget.userData,
+              projectsProvider: widget.projectsProvider,
+              theme: theme,
+              onProjectSelect: widget.onProjectSelect,
+            )
+          : SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+              child: DefaultTextStyle(
+                style: TextStyle(
+                  fontFamily: widget.userData.fontFamily,
+                  color: theme.textPrimary,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    PortfolioHeroBanner(userData: widget.userData, theme: theme),
+                    const SizedBox(height: 10),
+                    PortfolioAboutSection(userData: widget.userData, theme: theme),
+                    const SizedBox(height: 10),
+                    PortfolioProjectGrid(
+                      projectsProvider: widget.projectsProvider,
+                      theme: theme,
+                      userData: widget.userData,
+                      onProjectSelect: widget.onProjectSelect,
+                    ),
+                    const SizedBox(height: 24),
+                    PortfolioProfileSections(userData: widget.userData, theme: theme),
+                  ],
+                ),
               ),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 
@@ -138,6 +156,15 @@ class _HomePortfolioState extends State<HomePortfolio> {
     required KaelTheme theme,
     required Widget child,
   }) {
+    final bgImagePath = widget.userData.portfolioBgImagePath;
+    final hasBgImage = bgImagePath != null;
+    final overlayColor = hasBgImage
+        ? widget.userData.portfolioBgColor.withValues(alpha: 0.38)
+        : Color.alphaBlend(
+            widget.userData.portfolioBgColor.withValues(alpha: 0.42),
+            theme.panelBackground.withValues(alpha: 0.52),
+          );
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 500),
       width: width,
@@ -148,16 +175,27 @@ class _HomePortfolioState extends State<HomePortfolio> {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(25),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-          child: Container(
-            color: Color.alphaBlend(
-              widget.userData.portfolioBgColor.withValues(alpha: 0.42),
-              theme.panelBackground.withValues(alpha: 0.52),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (hasBgImage)
+              Image.file(
+                File(bgImagePath),
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
+            if (hasBgImage)
+              Container(color: overlayColor)
+            else
+              BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+                child: Container(color: overlayColor),
+              ),
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: child,
             ),
-            padding: const EdgeInsets.all(24),
-            child: child,
-          ),
+          ],
         ),
       ),
     );
@@ -179,12 +217,54 @@ class _PortfolioCustomizerState extends State<PortfolioCustomizer> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(isBg ? 'Background Color' : 'Text Color'),
+        title: Text(isBg ? 'Background Color' : 'Heading Color'),
         content: SingleChildScrollView(
           child: ColorPicker(
-            pickerColor: isBg ? widget.userData.portfolioBgColor : widget.userData.textColor,
+            pickerColor: isBg
+                ? widget.userData.portfolioBgColor
+                : widget.userData.resolveHeadingColor(widget.theme),
             onColorChanged: (c) => widget.userData.updatePortfolioTheme(bg: isBg ? c : null, text: isBg ? null : c),
           ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickBgImage() async {
+    final result = await FilePicker.platform.pickFiles(type: FileType.image);
+    if (result != null && result.files.single.path != null) {
+      widget.userData.updatePortfolioBgImage(result.files.single.path);
+    }
+  }
+
+  void _showBgImageOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        margin: const EdgeInsets.all(20),
+        decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(20)),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.image_outlined, color: Colors.white70, size: 18),
+              title: const Text('Add / Replace background image', style: TextStyle(color: Colors.white, fontSize: 13)),
+              onTap: () {
+                Navigator.pop(context);
+                _pickBgImage();
+              },
+            ),
+            if (widget.userData.portfolioBgImagePath != null)
+              ListTile(
+                leading: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 18),
+                title: const Text('Remove background image', style: TextStyle(color: Colors.redAccent, fontSize: 13)),
+                onTap: () {
+                  widget.userData.updatePortfolioBgImage(null);
+                  Navigator.pop(context);
+                },
+              ),
+          ],
         ),
       ),
     );
@@ -231,6 +311,7 @@ class _PortfolioCustomizerState extends State<PortfolioCustomizer> {
           _CustomBouncyButton(label: "FONT", theme: theme, onTap: _showFontOptions),
           _CustomBouncyButton(label: "TEXT COLOUR", theme: theme, onTap: () => _pickColor(false)),
           _CustomBouncyButton(label: "BG COLOUR", theme: theme, onTap: () => _pickColor(true)),
+          _CustomBouncyButton(label: "BG IMAGE", theme: theme, onTap: _showBgImageOptions),
         ],
       ),
     );
